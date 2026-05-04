@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Vault Bridge",
+  "version": "0.1.0",
+  "description": "Screenshots relay pairing scaffolding for Vault mobile handshake.",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Vault"
+  },
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

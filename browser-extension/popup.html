@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Vault Bridge</title>
+<style>
+body{font-family:Inter,sans-serif;background:#070a15;color:#E2E8F0;margin:16px;width:260px;font-size:14px;}
+button{border:none;border-radius:12px;background:#4338CA;padding:12px 16px;color:#F9FAFB;width:100%;cursor:pointer;margin-top:12px;}
+input{width:100%;padding:12px;margin-top:6px;background:#141b35;border-radius:10px;color:#CBD5F5;border:1px solid rgba(255,255,255,0.1);}
+</style>
+</head>
+<body>
+<h3>Vault Bridge Beta</h3>
+<p>Add relay session JSON from mobile pairing.</p>
+<label>Relay WS</label>
+<input id="relay" placeholder="wss://host"/>
+<label>Raw JSON Payload</label>
+<input id="payload" placeholder="{ sessionId,... }"/>
+
+<button id="wire">Establish Channel</button>
+<script src="popup.js" type="module"></script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+import { memo } from 'react';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { Text, View } from 'react-native';
+
+import { estimatePasswordEntropyBits, strengthFromEntropy } from '@/lib/password-entropy';
+
+type Props = { password: string };
+
+export const StrengthMeter = memo(function StrengthMeterImpl({ password }: Props) {
+  const bits = estimatePasswordEntropyBits(password);
+  const label = strengthFromEntropy(bits);
+  const progress = bits >= 71 ? 1 : bits >= 40 ? 0.55 : bits > 0 ? 0.3 : 0;
+  const w = useSharedValue(0);
+
+  useAnimatedStyle(() => {
+    w.value = withTiming(progress, { duration: 260 });
+    return {};
+  });
+
+  useAnimatedStyle(() => {
+    w.value = withTiming(progress, { duration: 260 });
+    return {
+      width: `${Math.min(100, Math.max(progress * 100, bits > 0 ? 14 : 0))}%`,
+    };
+  });
+
+  const barColors =
+    label === 'Strong'
+      ? 'bg-emerald-400'
+      : label === 'Medium'
+        ? 'bg-amber-400'
+        : bits > 0
+          ? 'bg-rose-400'
+          : 'bg-white/10';
+
+  return (
+    <View className="gap-y-2">
+      <Text className="font-sans text-xs text-slate-400">{`${label} • ${bits} bits entropy`}</Text>
+      <View className="h-2 rounded-md bg-white/10 overflow-hidden">
+        <Animated.View style={useAnimatedStyle(() => ({
+          height: '100%',
+          borderRadius: 6,
+          width: `${bits === 0 ? 0 : label === 'Strong' ? 100 : label === 'Medium' ? 66 : 40}%`,
+        }))} className={barColors}
+        />
+      </View>
+    </View>
+  );
+});

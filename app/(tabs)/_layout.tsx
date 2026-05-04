@@ -1,57 +1,65 @@
-import React from 'react';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Link, Tabs } from 'expo-router';
-import { Pressable } from 'react-native';
+import { BlurView } from 'expo-blur';
+import { Tabs } from 'expo-router';
+import { Fingerprint, KeyRound, Settings, Shuffle } from 'lucide-react-native';
+import { Platform, View } from 'react-native';
 
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
+import { CenteredIcon } from '@/components/vault/centered-icon';
 
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
-  color: string;
-}) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
+function tabIcon(Icon: typeof KeyRound) {
+  return function TabBarGlyph({ color, size }: { color: string; size: number }) {
+    const s = typeof size === 'number' ? size : 24;
+    return (
+      <CenteredIcon size={Math.ceil(s + 4)}>
+        <Icon color={color} size={s} strokeWidth={2.25} />
+      </CenteredIcon>
+    );
+  };
 }
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
-        headerShown: useClientOnlyValue(false, true),
+        headerShown: false,
+        tabBarActiveTintColor: '#818CF8',
+        tabBarInactiveTintColor: '#64748B',
+        tabBarStyle: {
+          backgroundColor: Platform.OS === 'android' ? 'rgba(13,18,42,0.92)' : 'transparent',
+          borderTopColor: 'rgba(255,255,255,0.06)',
+        },
+        tabBarBackground: () =>
+          Platform.OS === 'ios' ? (
+            <BlurView tint="dark" intensity={70} className="absolute inset-0 border-t border-white/5 bg-navy-900/85" />
+          ) : (
+            <View className="flex-1 border-t border-white/5 bg-navy-900/95" />
+          ),
       }}>
       <Tabs.Screen
-        name="index"
+        name="passwords"
         options={{
-          title: 'Tab One',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <Pressable>
-                {({ pressed }) => (
-                  <FontAwesome
-                    name="info-circle"
-                    size={25}
-                    color={Colors[colorScheme ?? 'light'].text}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
-          ),
+          title: 'Passwords',
+          tabBarIcon: tabIcon(KeyRound),
         }}
       />
       <Tabs.Screen
-        name="two"
+        name="passkeys"
         options={{
-          title: 'Tab Two',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          title: 'Passkeys',
+          tabBarIcon: tabIcon(Fingerprint),
+        }}
+      />
+      <Tabs.Screen
+        name="generator"
+        options={{
+          title: 'Generator',
+          tabBarIcon: tabIcon(Shuffle),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Settings',
+          tabBarIcon: tabIcon(Settings),
         }}
       />
     </Tabs>

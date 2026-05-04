@@ -1,59 +1,83 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import '../global.css';
+
+import {
+  JetBrainsMono_400Regular,
+} from '@expo-google-fonts/jetbrains-mono';
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  useFonts,
+} from '@expo-google-fonts/inter';
+import { DarkTheme, ThemeProvider } from '@react-navigation/native';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import * as SplashScreen from 'expo-splash-screen';
+import { Stack } from 'expo-router';
 import { useEffect } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import 'react-native-reanimated';
 
-import { useColorScheme } from '@/components/useColorScheme';
+import { VaultCopyToastHost } from '@/components/vault/copy-toast-host';
+import {
+  VaultAutosleepWatcher,
+  VaultColdBoot,
+  VaultRuntimeNav,
+} from '@/components/vault/session-bootstrap';
+import { VaultBridgeCoordinator } from '@/components/vault/bridge-wire-sync';
 
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router';
+export { ErrorBoundary } from 'expo-router';
 
-export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: '(tabs)',
-};
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-    ...FontAwesome.font,
+  const [loaded, fontError] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    JetBrainsMono_400Regular,
   });
 
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
-    if (error) throw error;
-  }, [error]);
-
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
+    if (loaded || fontError != null) {
+      SplashScreen.hideAsync().catch(() => {});
     }
-  }, [loaded]);
+  }, [loaded, fontError]);
 
-  if (!loaded) {
-    return null;
-  }
-
-  return <RootLayoutNav />;
-}
-
-function RootLayoutNav() {
-  const colorScheme = useColorScheme();
+  // Avoid hanging on a blank native root if fonts never settle (offline / fetch issues).
+  if (!loaded && fontError == null) return null;
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#0A0F1E' }}>
+      <SafeAreaProvider>
+        <ThemeProvider value={DarkTheme}>
+          <BottomSheetModalProvider>
+            <VaultCopyToastHost>
+              <VaultColdBoot />
+              {/* Mounts hooks only: returns null — keeps pathname aligned with PIN/lock after boot. */}
+              <VaultRuntimeNav />
+              <VaultAutosleepWatcher />
+              <VaultBridgeCoordinator />
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: '#0A0F1E' },
+                }}>
+                <Stack.Screen
+                  name="lock"
+                  options={{
+                    gestureEnabled: false,
+                    animation: 'fade',
+                  }}
+                />
+                <Stack.Screen name="(tabs)" />
+              </Stack>
+            </VaultCopyToastHost>
+          </BottomSheetModalProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
