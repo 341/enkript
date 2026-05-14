@@ -4,12 +4,14 @@ import * as Clipboard from "expo-clipboard";
 import { Pressable, Switch, Text, View } from "react-native";
 import Slider from "@react-native-community/slider";
 
+import { useVaultCopyToast } from "@/components/vault/copy-toast-host";
 import { StrengthMeter } from "@/components/vault/strength-meter";
 import { countEnabledTypes, generateSecurePassword, type GeneratorFlags } from "@/lib/generate-password";
 import { estimatePasswordEntropyBits, strengthFromEntropy } from "@/lib/password-entropy";
 
 export default function StandaloneGenerator() {
   const sheetRef = React.useRef<BottomSheetModal>(null);
+  const toast = useVaultCopyToast();
 
   React.useEffect(() => {
     queueMicrotask(() => sheetRef.current?.present());
@@ -83,7 +85,9 @@ export default function StandaloneGenerator() {
         </Pressable>
         <Pressable
           accessibilityRole="button"
-          onPress={() => Clipboard.setStringAsync(preview)}
+          onPress={() => {
+            void Clipboard.setStringAsync(preview).then(() => toast.show("Password copied"));
+          }}
           className="flex-1 rounded-xl bg-indigo-500 py-3 items-center">
           <Text className="text-slate-50 font-semibold">Copy</Text>
         </Pressable>

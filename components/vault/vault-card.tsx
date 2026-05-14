@@ -49,7 +49,7 @@ export function VaultCard({ entry, delay, onLongPress }: Props) {
                 accessibilityRole="button"
                 onPress={() => {
                   void copyWithAutoClear(`pwd-${entry.id}`, entry.password, 30000).then(() => {
-                    toast.show('Copied! Clears in 30 seconds.');
+                    toast.show('Password copied. Clears in 30 seconds.');
                   });
                 }}>
                 <Text className="text-indigo-400 text-sm font-medium">Copy</Text>

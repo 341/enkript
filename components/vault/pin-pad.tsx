@@ -40,7 +40,7 @@ export function PinPad({ length = 6, onComplete, disabled = false }: Props) {
 
   return (
     <View className={`items-center gap-y-6 ${disabled ? 'opacity-40' : ''}`} pointerEvents={disabled ? 'none' : 'auto'}>
-      <View className="flex-row gap-x-2">
+      <View className="flex-row gap-x-5 justify-center">
         {Array.from({ length }).map((_, i) => (
           <View
             key={`dot-${String(i)}`}
@@ -48,9 +48,9 @@ export function PinPad({ length = 6, onComplete, disabled = false }: Props) {
           />
         ))}
       </View>
-      <View className="w-full px-10 gap-y-3">
+      <View className="w-full px-10 gap-y-4">
         {ROWS.map((row, ri) => (
-          <View key={String(ri)} className="flex-row justify-around">
+          <View key={String(ri)} className="flex-row justify-center gap-x-4">
             {row.map((cell) =>
               cell === 'blank' ? (
                 <View key="gap" style={{ width: 72 }} />

@@ -65,7 +65,7 @@ export default function PasswordDetailScreen() {
               accessibilityRole="button"
               onPress={() => {
                 void copyWithAutoClear(`pwd-${entry.id}`, entry.password, 30000).then(() =>
-                  toast.show("Copied! Clears in 30 seconds."),
+                  toast.show("Password copied. Clears in 30 seconds."),
                 );
               }}>
               <Text className="text-indigo-300 font-semibold">Copy</Text>
@@ -152,7 +152,7 @@ function Section(props: {
           accessibilityRole="button"
           onPress={() => {
             void copyWithAutoClear(props.clipboardKey, props.value, 30000).then(() =>
-              props.copyToast("Copied! Clears in 30 seconds."),
+              props.copyToast("Username copied. Clears in 30 seconds."),
             );
           }}>
           <Text className="text-indigo-300 font-semibold">Copy</Text>
