@@ -1,9 +1,9 @@
-import * as React from 'react';
 import { Link, router } from 'expo-router';
+import { Plus, Search, Settings } from 'lucide-react-native';
+import * as React from 'react';
 import { useDeferredValue } from 'react';
 import { Alert, type AlertButton, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Plus, Search, Settings } from 'lucide-react-native';
 
 import { CenteredIcon } from '@/components/vault/centered-icon';
 import { VaultCard } from '@/components/vault/vault-card';
@@ -99,22 +99,20 @@ export default function PasswordListScreen() {
         </View>
         <Link
           href="/(tabs)/settings"
-          className="h-11 w-11 rounded-full bg-navy-900 border border-white/10 overflow-hidden flex">
-          <View className="flex-1 items-center justify-center">
+          className="h-22 w-22 rounded-full bg-navy-900 border p-2 border-white/10 overflow-hidden flex items-center justify-center">
             <Settings color="#818CF8" size={22} strokeWidth={2.25} />
-          </View>
         </Link>
       </View>
 
       <View className="px-6 mb-5">
         <View className="rounded-lg bg-navy-800 border border-white/[0.04] pl-3 pr-4 py-2 flex-row items-center gap-2 min-h-[48px]">
-          <CenteredIcon size={36}>
+          <CenteredIcon size={20}>
             <Search color="#64748b" size={20} strokeWidth={2.25} />
           </CenteredIcon>
           <TextInput
             placeholder="Search passwords…"
             placeholderTextColor="#64748b"
-            className="flex-1 py-3 text-base text-slate-100 font-sans"
+            className="flex-1 py-1 text-base text-slate-100 font-sans"
             value={search}
             onChangeText={setSearch}
           />
@@ -166,10 +164,8 @@ export default function PasswordListScreen() {
 
       <Link
         href="/(tabs)/passwords/new"
-        className="absolute bottom-28 right-6 h-[58px] w-[58px] rounded-full bg-indigo-500 shadow-fab border border-indigo-300/60 overflow-hidden flex">
-        <View className="flex-1 items-center justify-center">
-          <Plus color="#F8FAFC" size={28} strokeWidth={2.3} />
-        </View>
+        className="absolute bottom-6 right-6 h-33 w-33 rounded-full bg-indigo-500 shadow-fab border p-2 border-indigo-300/60 overflow-hidden flex items-center justify-center">
+        <Plus color="#F8FAFC" size={28} strokeWidth={2.3} />
       </Link>
     </View>
   );
