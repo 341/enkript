@@ -65,6 +65,7 @@ export default function LockScreen() {
                   try {
                     await setPinCode(pin);
                     useBootGateStore.getState().markConfigured(true);
+                    useVaultLockStore.getState().setPostUnlockAutofillPrompt(true);
                     await unlockVault();
                   } catch (e) {
                     const msg = e instanceof Error ? e.message : 'Try again.';
@@ -116,6 +117,7 @@ export default function LockScreen() {
                     return;
                   }
 
+                  useVaultLockStore.getState().setPostUnlockAutofillPrompt(true);
                   await unlockVault();
                 } catch (e) {
                   const msg = e instanceof Error ? e.message : 'Try again.';

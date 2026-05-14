@@ -26,6 +26,7 @@ import {
   VaultRuntimeNav,
 } from '@/components/vault/session-bootstrap';
 import { VaultBridgeCoordinator } from '@/components/vault/bridge-wire-sync';
+import { AutofillUnlockPrompt } from '@/components/vault/autofill-unlock-prompt';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -58,6 +59,7 @@ export default function RootLayout() {
               <VaultColdBoot />
               {/* Mounts hooks only: returns null — keeps pathname aligned with PIN/lock after boot. */}
               <VaultRuntimeNav />
+              <AutofillUnlockPrompt />
               <VaultAutosleepWatcher />
               <VaultBridgeCoordinator />
               <Stack

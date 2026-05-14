@@ -9,8 +9,11 @@ type VaultLockSlice = {
   biometricFailCount: number;
   pinFailCount: number;
   pendingSetupPin: boolean;
+  /** Set when the user successfully leaves the lock screen; consumed to show AutoFill onboarding. */
+  postUnlockAutofillPrompt: boolean;
   lock: () => void;
   unlock: () => void;
+  setPostUnlockAutofillPrompt: (v: boolean) => void;
   setLockTimeoutSeconds: (s: number) => void;
   updateLastActive: () => void;
   resetFailures: () => void;
@@ -26,6 +29,8 @@ export const useVaultLockStore = create<VaultLockSlice>((set) => ({
   biometricFailCount: 0,
   pinFailCount: 0,
   pendingSetupPin: false,
+  postUnlockAutofillPrompt: false,
+  setPostUnlockAutofillPrompt: (postUnlockAutofillPrompt) => set({ postUnlockAutofillPrompt }),
   lock: () => set({ vaultLocked: true }),
   unlock: () => set({ vaultLocked: false, lastActiveAt: Date.now(), biometricFailCount: 0, pinFailCount: 0 }),
   setLockTimeoutSeconds: (s) => set({ lockAfterSeconds: s }),
