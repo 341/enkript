@@ -16,7 +16,8 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSFaceIDUsageDescription": "Unlock Vault with Face ID."
+        "NSFaceIDUsageDescription": "Unlock Vault with Face ID.",
+        "ITSAppUsesNonExemptEncryption": false
       },
       "bundleIdentifier": "com.maxhuni.eroll.myenkript"
     },
@@ -36,13 +37,24 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-dev-client",
+        {
+          "launchMode": "most-recent"
+        }
+      ],
       "./plugins/with-autofill-manifest.js"
     ],
     "extra": {
-      "vaultRelayWsUrl": ""
+      "vaultRelayWsUrl": "",
+      "router": {},
+      "eas": {
+        "projectId": "88c70083-ccf1-45a8-9e75-c8ee2674357e"
+      }
     },
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "owner": "maxhuni.eroll"
   }
 }
