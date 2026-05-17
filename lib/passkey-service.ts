@@ -2,7 +2,8 @@ import { p256 } from '@noble/curves/nist.js';
 import { sha256 } from '@noble/hashes/sha2.js';
 import * as Crypto from 'expo-crypto';
 
-import { decryptValue, encryptValue } from '@/lib/crypto';
+import { decryptWithVaultKey, encryptWithVaultKey } from '@/lib/crypto';
+import { getVaultSessionKey, hasVaultSessionKey } from '@/lib/vault-crypto-session';
 import type { PasskeyEntry } from '@/lib/types';
 
 function bytesToHex(bytes: Uint8Array): string {
@@ -27,6 +28,26 @@ export function bytesToBase64Url(data: Uint8Array): string {
   return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
+async function encryptPasskeySecret(hex: string): Promise<string> {
+  if (!hasVaultSessionKey()) {
+    const { encryptPinEnvelope } = await import('@/lib/crypto');
+    return encryptPinEnvelope(hex);
+  }
+  return encryptWithVaultKey(hex, getVaultSessionKey());
+}
+
+async function decryptPasskeySecret(secret: string): Promise<string> {
+  if (hasVaultSessionKey() && secret.startsWith('vault:v2:')) {
+    return decryptWithVaultKey(secret, getVaultSessionKey());
+  }
+  const { decryptPinEnvelope, decryptStubValue, isStubEnvelope } = await import('@/lib/crypto');
+  if (isStubEnvelope(secret)) return decryptStubValue(secret);
+  if (hasVaultSessionKey()) {
+    return decryptWithVaultKey(secret, getVaultSessionKey());
+  }
+  return decryptPinEnvelope(secret);
+}
+
 export async function createPasskeyEntry(init: {
   rpId: string;
   rpName: string;
@@ -46,7 +67,7 @@ export async function createPasskeyEntry(init: {
     userName: init.userName,
     userDisplayName: init.userDisplayName,
     credentialId: bytesToBase64Url(credentialIdBuf),
-    privateKeyEncrypted: await encryptValue(bytesToHex(secretKey)),
+    privateKeyEncrypted: await encryptPasskeySecret(bytesToHex(secretKey)),
     publicKeyBase64Url: bytesToBase64Url(publicKey),
     signCount: 0,
     createdAt: Date.now(),
@@ -71,7 +92,7 @@ export async function signAssertionDigest(
   entry: PasskeyEntry,
   digest: Uint8Array,
 ): Promise<{ compactSignature: Uint8Array; nextSignCount: number }> {
-  const hex = await decryptValue(entry.privateKeyEncrypted);
+  const hex = await decryptPasskeySecret(entry.privateKeyEncrypted);
   const secretKey = hexToBytes(hex);
   const sig = p256.sign(digest, secretKey, { prehash: false }) as unknown as {
     toBytes: (format?: string) => Uint8Array;

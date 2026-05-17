@@ -1,40 +1,111 @@
 // [VaultUnlock · Steps 1, 5, 6] SecureStore persistence for PIN envelope, vault bundle, lock timeout.
 import * as SecureStore from 'expo-secure-store';
 
-import { decryptValue, encryptValue } from '@/lib/crypto';
+import * as ExpoCrypto from 'expo-crypto';
+
+import { KDF_SALT_BYTES } from '@/lib/crypto-types';
+import { deriveVaultKey } from '@/lib/crypto';
+import {
+  decryptVaultBundle,
+  encryptVaultBundle,
+} from '@/lib/vault-migration';
 import type { VaultPersistShape } from '@/lib/types';
 
 /** [VaultUnlock · Step 6] Encrypted passwords/passkeys/devices JSON. */
 const VAULT_KEY = 'vault_encrypted_bundle_v1';
+export const KDF_SALT_KEY = 'vault_kdf_salt_v1';
 /** [VaultUnlock · Step 5] Encrypted bcrypt hash of the 6-digit PIN. */
 export const PIN_HASH_KEY = 'vault_pin_bcrypt_via_encrypt_stub_v1';
 
 const emptyPersist = (): VaultPersistShape => ({
+  version: 1,
   passwords: [],
   passkeys: [],
   pairedDevices: [],
+  items: [],
+  folders: [],
 });
 
+export async function readKdfSalt(): Promise<Uint8Array | null> {
+  const raw = await SecureStore.getItemAsync(KDF_SALT_KEY);
+  if (!raw) return null;
+  const bin = globalThis.atob(raw);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+export async function writeKdfSalt(salt: Uint8Array): Promise<void> {
+  let bin = '';
+  salt.forEach((b) => {
+    bin += String.fromCharCode(b);
+  });
+  await SecureStore.setItemAsync(KDF_SALT_KEY, globalThis.btoa(bin));
+}
+
+export async function ensureKdfSalt(): Promise<Uint8Array> {
+  const existing = await readKdfSalt();
+  if (existing) return existing;
+  const salt = ExpoCrypto.getRandomBytes(KDF_SALT_BYTES);
+  await writeKdfSalt(salt);
+  return salt;
+}
+
+export async function deriveVaultKeyFromPin(pin: string): Promise<Uint8Array> {
+  const salt = await ensureKdfSalt();
+  return deriveVaultKey(pin, salt);
+}
+
+function normalizePersistShape(parsed: VaultPersistShape): VaultPersistShape {
+  return {
+    version: parsed.version ?? 1,
+    passwords: parsed.passwords ?? [],
+    passkeys: parsed.passkeys ?? [],
+    pairedDevices: parsed.pairedDevices ?? [],
+    items: parsed.items ?? [],
+    folders: parsed.folders ?? [],
+  };
+}
+
 /** [VaultUnlock · Step 6] Called by hydrateFromDisk after successful unlock. */
-export async function loadPersistedVaultShape(): Promise<VaultPersistShape> {
+export async function loadPersistedVaultShape(
+  vaultKey: Uint8Array,
+): Promise<{ shape: VaultPersistShape; migrated: boolean }> {
+  try {
+    const raw = await SecureStore.getItemAsync(VAULT_KEY);
+    if (!raw) return { shape: emptyPersist(), migrated: false };
+    const { plaintext, migrated } = await decryptVaultBundle(raw, vaultKey);
+    const parsed = JSON.parse(plaintext) as VaultPersistShape;
+    const shape = normalizePersistShape(parsed);
+    if (migrated) {
+      await persistVaultShape(shape, vaultKey);
+    }
+    return { shape, migrated };
+  } catch {
+    return { shape: emptyPersist(), migrated: false };
+  }
+}
+
+/** Load without vault key when no PIN is configured (stub-only legacy bundle). */
+export async function loadPersistedVaultShapeUnlocked(): Promise<VaultPersistShape> {
   try {
     const raw = await SecureStore.getItemAsync(VAULT_KEY);
     if (!raw) return emptyPersist();
-    const json = await decryptValue(raw);
-    const parsed = JSON.parse(json) as VaultPersistShape;
-    return {
-      passwords: parsed.passwords ?? [],
-      passkeys: parsed.passkeys ?? [],
-      pairedDevices: parsed.pairedDevices ?? [],
-    };
+    const { decryptStubValue, isStubEnvelope } = await import('@/lib/crypto');
+    if (!isStubEnvelope(raw)) return emptyPersist();
+    const json = await decryptStubValue(raw);
+    return normalizePersistShape(JSON.parse(json) as VaultPersistShape);
   } catch {
     return emptyPersist();
   }
 }
 
-export async function persistVaultShape(shape: VaultPersistShape): Promise<void> {
+export async function persistVaultShape(
+  shape: VaultPersistShape,
+  vaultKey: Uint8Array,
+): Promise<void> {
   const json = JSON.stringify(shape);
-  const enc = await encryptValue(json);
+  const enc = await encryptVaultBundle(json, vaultKey);
   await SecureStore.setItemAsync(VAULT_KEY, enc);
 }
 

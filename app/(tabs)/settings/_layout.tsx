@@ -15,6 +15,11 @@ export default function SettingsStackLayout() {
       <Stack.Screen name="autofill" />
       <Stack.Screen name="import-export" />
       <Stack.Screen name="browser-bridge" />
+      <Stack.Screen name="vault-health" />
+      <Stack.Screen name="notes" />
+      <Stack.Screen name="note/[id]" />
+      <Stack.Screen name="cards" />
+      <Stack.Screen name="card/[id]" />
     </Stack>
   );
 }

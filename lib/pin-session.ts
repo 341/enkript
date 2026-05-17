@@ -2,7 +2,8 @@
 import bcrypt from 'bcryptjs';
 import * as ExpoCrypto from 'expo-crypto';
 
-import { decryptValue, encryptValue } from '@/lib/crypto';
+import { decryptPinEnvelope, encryptPinEnvelope } from '@/lib/crypto';
+import { ensureKdfSalt } from '@/lib/vault-repository';
 import {
   isPinLength,
   isValidPinForLength,
@@ -25,7 +26,8 @@ export async function setPinCode(pin: string, length: PinLength): Promise<void> 
     throw new Error(`PIN must be exactly ${length} digits.`);
   }
   const hash = bcrypt.hashSync(pin, 12);
-  const env = await encryptValue(hash);
+  await ensureKdfSalt();
+  const env = await encryptPinEnvelope(hash);
   await writePinEnvelope(env);
   await writeStoredPinLength(length);
 }
@@ -46,7 +48,7 @@ export function assertPinLength(length: number): asserts length is PinLength {
 export async function verifyPinCode(pin: string): Promise<boolean> {
   const env = await readPinEnvelope();
   if (!env) return false;
-  const hash = await decryptValue(env);
+  const hash = await decryptPinEnvelope(env);
   return bcrypt.compareSync(pin, hash);
 }
 

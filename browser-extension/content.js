@@ -20,10 +20,32 @@ function injectAssistControl() {
 
 injectAssistControl();
 
+function applyFillToForm(username, password) {
+  const userEl =
+    document.querySelector('input[type="email"], input[autocomplete="username"], input[name*="user" i]') ??
+    document.querySelector('input[type="text"]');
+  const passEl = document.querySelector('input[type="password"]');
+  if (userEl && username) {
+    userEl.value = username;
+    userEl.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  if (passEl && password) {
+    passEl.value = password;
+    passEl.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+}
+
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg?.type === 'RELAY_PAYLOAD') {
     console.info('[vault-bridge]', msg.payload);
   }
+  if (msg?.type === 'VAULT_FILL' && msg.payload) {
+    applyFillToForm(msg.payload.username, msg.payload.password);
+  }
+});
+
+document.getElementById('vault-mini-assist-root')?.addEventListener('click', () => {
+  chrome.runtime.sendMessage({ type: 'VAULT_REQUEST_FILL', domain: location.hostname });
 });
 
 const originalCreate = navigator.credentials?.create?.bind(navigator.credentials);

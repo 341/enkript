@@ -44,6 +44,7 @@
         }
       ],
       "./plugins/with-autofill-manifest.js",
+      "./modules/vault-autofill/app.plugin.js",
       "expo-secure-store",
       "@react-native-community/datetimepicker"
     ],

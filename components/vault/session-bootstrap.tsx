@@ -5,6 +5,7 @@ import { AppState } from 'react-native';
 
 import { navigateToVaultLock } from '@/lib/navigate-vault-lock';
 import { canAccessStorybook } from '@/lib/storybook-env';
+import { lockVaultSession } from '@/lib/unlock-vault';
 import { loadStoredLockTimeout } from '@/lib/vault-repository';
 import { hasPinConfigured } from '@/lib/pin-session';
 import { useBootGateStore } from '@/stores/boot-gate-store';
@@ -48,7 +49,7 @@ export function VaultColdBoot() {
       if (!hasPin) {
         // [VaultUnlock · Step 6] No PIN yet: stay unlocked and load vault for first-run / pre-wizard use.
         useVaultLockStore.setState({ vaultLocked: false });
-        await useVaultStore.getState().hydrateFromDisk();
+        await useVaultStore.getState().hydrateWithoutPin();
       } else {
         // [VaultUnlock · Step 1] PIN exists: start locked until user completes Step 4 on /lock.
         useVaultLockStore.setState({ vaultLocked: true });
@@ -141,6 +142,7 @@ export function VaultAutosleepWatcher() {
       // [VaultUnlock · Step 8] Lock, wipe in-memory secrets, navigate — same path as manual lock.
       if (shouldSleep) {
         useVaultLockStore.getState().lock();
+        lockVaultSession();
         useVaultStore.getState().clearMemoryForLock();
         navigateToVaultLock();
       }

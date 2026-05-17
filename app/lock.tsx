@@ -10,6 +10,7 @@ import { useEffectiveColorScheme } from '@/hooks/useEffectiveColorScheme';
 import { DEFAULT_PIN_LENGTH, pinLengthLabel, type PinLength } from '@/lib/pin-length';
 import { activityIndicatorTint } from '@/lib/ui-theme';
 import { getPinLength, hasPinConfigured, setPinCode, verifyPinCode } from '@/lib/pin-session';
+import { unlockVaultWithPin } from '@/lib/unlock-vault';
 import { useBootGateStore } from '@/stores/boot-gate-store';
 import { useVaultLockStore } from '@/stores/vault-lock-store';
 import { useVaultStore } from '@/stores/vault-store';
@@ -40,10 +41,13 @@ export default function LockScreen() {
   }, []);
 
   // [VaultUnlock · Steps 4–6] Success path: clear failures → unlock → hydrate (Step 3 nav follows).
-  const unlockVault = React.useCallback(async () => {
+  const unlockVault = React.useCallback(async (pin: string) => {
     useVaultLockStore.getState().resetFailures();
     useVaultLockStore.getState().unlock();
-    await useVaultStore.getState().hydrateFromDisk();
+    const { migrated } = await unlockVaultWithPin(pin);
+    if (migrated) {
+      Alert.alert('Vault upgraded', 'Your data is now protected with stronger encryption.');
+    }
   }, []);
 
   // [VaultUnlock · Step 4] First-time PIN: capture → confirm → setPinCode (Step 5) → unlockVault (Step 6).
@@ -99,7 +103,7 @@ export default function LockScreen() {
                       await setPinCode(pin, wizardPinLength); // [VaultUnlock · Step 5]
                       useBootGateStore.getState().markConfigured(true);
                       useVaultLockStore.getState().setPostUnlockAutofillPrompt(true); // [VaultUnlock · Step 7]
-                      await unlockVault(); // [VaultUnlock · Step 6]
+                      await unlockVault(pin); // [VaultUnlock · Step 6]
                     } catch (e) {
                       const msg = e instanceof Error ? e.message : 'Try again.';
                       Alert.alert('Could not save PIN', msg);
@@ -153,6 +157,8 @@ export default function LockScreen() {
                   // [VaultUnlock · Step 4] 5 failures: wipe RAM and re-lock (Step 8-like path).
                   if (fails >= 5) {
                     useVaultLockStore.getState().resetFailures();
+                    const { lockVaultSession } = await import('@/lib/unlock-vault');
+                    lockVaultSession();
                     useVaultStore.getState().clearMemoryForLock();
                     useVaultLockStore.getState().lock();
                   }
@@ -161,7 +167,7 @@ export default function LockScreen() {
                 }
 
                 useVaultLockStore.getState().setPostUnlockAutofillPrompt(true); // [VaultUnlock · Step 7]
-                await unlockVault(); // [VaultUnlock · Step 6]
+                await unlockVault(pin); // [VaultUnlock · Step 6]
               } catch (e) {
                 const msg = e instanceof Error ? e.message : 'Try again.';
                 Alert.alert('Unlock failed', msg);

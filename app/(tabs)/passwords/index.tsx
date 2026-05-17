@@ -123,7 +123,10 @@ export default function PasswordListScreen() {
             tintColor={accent}
             onRefresh={async () => {
               setRefreshing(true);
-              await hydrateFromDisk();
+              const { hasVaultSessionKey } = await import('@/lib/vault-crypto-session');
+              if (hasVaultSessionKey()) {
+                await hydrateFromDisk();
+              }
               setRefreshing(false);
             }}
           />

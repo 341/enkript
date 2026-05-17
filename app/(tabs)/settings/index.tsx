@@ -8,6 +8,9 @@ import { canAccessStorybook } from "@/lib/storybook-env";
 const rows = [
   { title: "Appearance", href: "/(tabs)/settings/appearance" },
   { title: "Security", href: "/(tabs)/settings/security" },
+  { title: "Vault health", href: "/(tabs)/settings/vault-health" },
+  { title: "Secure notes", href: "/(tabs)/settings/notes" },
+  { title: "Payment cards", href: "/(tabs)/settings/cards" },
   { title: "Autofill", href: "/(tabs)/settings/autofill" },
   { title: "Import / Export", href: "/(tabs)/settings/import-export" },
   { title: "Browser bridge", href: "/(tabs)/settings/browser-bridge" },

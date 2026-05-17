@@ -1,4 +1,5 @@
 import * as Crypto from 'expo-crypto';
+import { router } from 'expo-router';
 import * as React from 'react';
 import { Alert, ScrollView, Text, View } from 'react-native';
 
@@ -12,7 +13,9 @@ import { VaultScreenHeader } from '@/components/ui/vault-screen-header';
 import { VaultSettingsRow } from '@/components/ui/vault-settings-row';
 import { VaultSwitch } from '@/components/ui/vault-switch';
 import { canUseBiometrics } from '@/hooks/useVaultAuth';
-import { encryptValue } from '@/lib/crypto';
+import { encryptWithVaultKey } from '@/lib/crypto';
+import { getVaultSessionKey, hasVaultSessionKey } from '@/lib/vault-crypto-session';
+import { lockVaultSession, unlockVaultWithPin } from '@/lib/unlock-vault';
 import { navigateToVaultLock } from '@/lib/navigate-vault-lock';
 import { shareTextFile } from "@/lib/import-export-service";
 import { saveStoredLockTimeout } from "@/lib/vault-repository";
@@ -41,6 +44,7 @@ export default function SecuritySettingsScreen() {
 
   const lockNow = React.useCallback(() => {
     useVaultLockStore.getState().lock();
+    lockVaultSession();
     useVaultStore.getState().clearMemoryForLock();
     navigateToVaultLock();
   }, []);
@@ -94,6 +98,13 @@ export default function SecuritySettingsScreen() {
 
       <PinRotationPanel />
 
+      <VaultButton
+        label="Vault health"
+        variant="secondary"
+        onPress={() => router.push('/(tabs)/settings/vault-health' as never)}
+        className="mt-8"
+      />
+
       <PasskeyExporter />
     </ScrollView>
   );
@@ -128,7 +139,22 @@ function PinRotationPanel() {
       setStatus("Pins do not match.");
       return;
     }
+    const { shapeFromVaultState } = await import('@/lib/vault-items');
+    const snapshot = shapeFromVaultState({
+      passwords: useVaultStore.getState().passwords,
+      notes: useVaultStore.getState().notes,
+      cards: useVaultStore.getState().cards,
+      folders: useVaultStore.getState().folders,
+      passkeys: useVaultStore.getState().passkeys,
+      pairedDevices: useVaultStore.getState().pairedDevices,
+    });
     await setPinCode(next, newPinLength);
+    lockVaultSession();
+    await unlockVaultWithPin(next);
+    const { persistVaultShape } = await import('@/lib/vault-repository');
+    const { getVaultSessionKey } = await import('@/lib/vault-crypto-session');
+    await persistVaultShape(snapshot, getVaultSessionKey());
+    await useVaultStore.getState().hydrateFromDisk();
     Alert.alert("PIN updated.");
     setCurrent("");
     setNext("");
@@ -190,7 +216,11 @@ function PasskeyExporter() {
         onPress={async () => {
           try {
             const payload = JSON.stringify(entries);
-            const encrypted = await encryptValue(payload);
+            if (!hasVaultSessionKey()) {
+              Alert.alert("Vault locked", "Unlock the vault before exporting passkeys.");
+              return;
+            }
+            const encrypted = await encryptWithVaultKey(payload, getVaultSessionKey());
             await shareTextFile(encrypted, `passkeys-export-${Crypto.randomUUID()}.txt`, "application/json");
           } catch (err: unknown) {
             Alert.alert("Export failed", String(err instanceof Error ? err.message : err));

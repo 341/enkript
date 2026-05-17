@@ -1,5 +1,7 @@
 # Feature Research Report — my-enkript
 
+> For **current** app behavior and user-facing functionality, see [FEATURES.md](./FEATURES.md). This report reflects May 2026 market research and an earlier product baseline; some gaps listed below have since been addressed in code.
+
 **Date:** May 17, 2026  
 **Scope:** Internet research on password-manager and local-vault trends (2025–2026), mapped to the current my-enkript codebase and a prioritized feature roadmap.
 

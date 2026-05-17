@@ -12,6 +12,7 @@ export type ImportPreviewRow = {
   url?: string;
   notes?: string;
   category?: PasswordCategory;
+  totpSecret?: string;
 };
 
 function normalizeCategory(raw?: string): PasswordCategory | undefined {
@@ -89,6 +90,7 @@ export function parseImportCsv(text: string, formatHint: ReturnType<typeof detec
     const password = String(r.password ?? '').trim();
     const url = String(r.url ?? '').trim();
     const notes = String(r.notes ?? r.note ?? '').trim();
+    const totpRaw = String(r.totp ?? r.totpsecret ?? r.authenticator ?? '').trim();
     return {
       title,
       username,
@@ -96,6 +98,7 @@ export function parseImportCsv(text: string, formatHint: ReturnType<typeof detec
       url,
       notes,
       category: normalizeCategory(String(r.category ?? '')),
+      totpSecret: totpRaw || undefined,
     };
   }).filter((r) => r.title);
 }

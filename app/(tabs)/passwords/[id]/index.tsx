@@ -6,6 +6,7 @@ import { useVaultCopyToast } from "@/components/vault/copy-toast-host";
 import { authenticateWithBiometrics } from "@/hooks/useVaultAuth";
 import { copyWithAutoClear } from "@/lib/clipboard-vault";
 import { normalizeHost } from "@/lib/domain-match";
+import { generateTotpCode } from "@/lib/totp";
 import { useSecurityPrefsStore } from "@/stores/security-prefs-store";
 import { usePasswordStore } from "@/stores/vault-store";
 
@@ -16,6 +17,18 @@ export default function PasswordDetailScreen() {
   const toast = useVaultCopyToast();
 
   const [revealed, setRevealed] = React.useState(false);
+  const [totpTick, setTotpTick] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!entry?.totpSecret) return;
+    const id = setInterval(() => setTotpTick((t) => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [entry?.totpSecret]);
+
+  const totp = React.useMemo(() => {
+    if (!entry?.totpSecret) return null;
+    return generateTotpCode(entry.totpSecret);
+  }, [entry?.totpSecret, totpTick]);
 
   if (!entry) {
     return (
@@ -94,6 +107,27 @@ export default function PasswordDetailScreen() {
             ) : null}
           </View>
         </View>
+
+        {totp ? (
+          <View className="mt-10 gap-y-3">
+            <Text className="text-[11px] text-slate-600 dark:text-slate-500 tracking-[0.3em] uppercase">
+              authenticator
+            </Text>
+            <Text className="font-mono text-3xl text-indigo-700 dark:text-indigo-300 tracking-widest">
+              {totp.code}
+            </Text>
+            <Pressable
+              onPress={() => {
+                void copyWithAutoClear(`totp-${entry.id}`, totp.code, 30000).then(() =>
+                  toast.show('Code copied. Clears in 30 seconds.'),
+                );
+              }}>
+              <Text className="text-indigo-700 dark:text-indigo-300 font-semibold">
+                Copy · {totp.remainingSeconds}s left
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         <View className="mt-12">
           <Text className="text-[11px] text-slate-600 dark:text-slate-500 uppercase tracking-[0.3em] mb-4">

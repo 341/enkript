@@ -35,6 +35,7 @@ export default function EditPasswordScreen() {
   const [url, setUrl] = React.useState("");
   const [notes, setNotes] = React.useState("");
   const [category, setCategory] = React.useState<PasswordCategory>("other");
+  const [totpSecret, setTotpSecret] = React.useState("");
   const [visible, setVisible] = React.useState(false);
 
   React.useEffect(() => {
@@ -45,6 +46,7 @@ export default function EditPasswordScreen() {
     setUrl(entry.url);
     setNotes(entry.notes);
     setCategory(entry.category);
+    setTotpSecret(entry.totpSecret ?? "");
   }, [entry]);
 
   if (!entry) {
@@ -68,7 +70,8 @@ export default function EditPasswordScreen() {
     password !== entry.password ||
     finalizeUrl(url) !== entry.url ||
     notes !== entry.notes ||
-    category !== entry.category;
+    category !== entry.category ||
+    totpSecret !== (entry.totpSecret ?? "");
 
   usePreventRemove(dirty, ({ data }) => {
     Alert.alert("Discard changes?", "", [
@@ -101,6 +104,7 @@ export default function EditPasswordScreen() {
             url: finalizeUrl(url),
             notes: notes.slice(0, 500),
             category,
+            totpSecret: totpSecret.trim() || undefined,
           });
           router.back();
         }}>
@@ -148,6 +152,14 @@ export default function EditPasswordScreen() {
           onChangeText={setUrl}
           autoCapitalize="none"
           placeholder="https://…"
+        />
+
+        <VaultTextField
+          label="TOTP secret (base32)"
+          value={totpSecret}
+          onChangeText={setTotpSecret}
+          autoCapitalize="none"
+          placeholder="JBSWY3DPEHPK3PXP or otpauth://…"
         />
 
         <VaultTextField
