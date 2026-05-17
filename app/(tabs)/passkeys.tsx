@@ -10,14 +10,14 @@ export default function PasskeyListScreen() {
   const removePasskey = useVaultStore((s) => s.removePasskey);
 
   return (
-    <View className="flex-1 bg-navy-950 pt-16 px-6">
-      <Text className="font-display text-3xl text-slate-100">Passkeys</Text>
-      <Text className="text-slate-400 mt-2 text-sm">
+    <View className="flex-1 bg-slate-100 dark:bg-navy-950 pt-16 px-6">
+      <Text className="font-display text-3xl text-slate-900 dark:text-slate-100">Passkeys</Text>
+      <Text className="text-slate-600 dark:text-slate-400 mt-2 text-sm">
         Passkeys sync from the browser extension via the bridge. Manual creation is disabled.
       </Text>
       <ScrollView className="mt-8" contentContainerStyle={{ paddingBottom: 120 }}>
         {passkeys.length === 0 ? (
-          <Text className="text-slate-500 mt-10 text-center">No passkeys yet.</Text>
+          <Text className="text-slate-600 dark:text-slate-500 mt-10 text-center">No passkeys yet.</Text>
         ) : (
           passkeys.map((pk) => (
             <Swipeable

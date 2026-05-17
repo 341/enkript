@@ -53,3 +53,6 @@ coverage/
 # Editors (uncomment if you don't want these in the repo)
 .vscode/
 .idea/
+
+*storybook.log
+storybook-static

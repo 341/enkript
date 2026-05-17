@@ -1,3 +1,4 @@
+// [VaultUnlock · Step 6] In-memory vault; hydrateFromDisk after unlock, clearMemoryForLock on lock.
 import * as Crypto from 'expo-crypto';
 import { create } from 'zustand';
 
@@ -43,6 +44,7 @@ export const useVaultStore = create<VaultPersistActions>((set, get) => ({
   passwords: [],
   passkeys: [],
   pairedDevices: [],
+  // [VaultUnlock · Step 6] SecureStore read + decrypt + parse — runs after PIN verify on /lock (perf hotspot).
   hydrateFromDisk: async () => {
     const data = await loadPersistedVaultShape();
     set({
@@ -63,6 +65,7 @@ export const useVaultStore = create<VaultPersistActions>((set, get) => ({
   upsertCredentialsForAutofill: async () => {
     await registerCredentials(get().passwords);
   },
+  // [VaultUnlock · Step 8] Wipe secrets from RAM when locking (auto-sleep or 5 failed PINs).
   clearMemoryForLock: () => {
     set({
       passwords: [],

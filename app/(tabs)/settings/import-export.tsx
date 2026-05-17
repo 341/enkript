@@ -1,10 +1,13 @@
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet";
 import * as DocumentPicker from "expo-document-picker";
 import * as React from "react";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text } from "react-native";
 
+import { VaultButton } from '@/components/ui/vault-button';
+import { VaultScreenHeader } from '@/components/ui/vault-screen-header';
 import { ExportWarningBanner } from "@/components/vault/export-warning-banner";
 import { ImportPreviewList } from "@/components/vault/import-preview-list";
+import { useEffectiveColorScheme } from '@/hooks/useEffectiveColorScheme';
 import {
   detectImportFormat,
   exportTo1PasswordCsv,
@@ -12,9 +15,11 @@ import {
   parseImportCsv,
   shareTextFile,
 } from "@/lib/import-export-service";
+import { bottomSheetBackground, bottomSheetHandleIndicator } from '@/lib/ui-theme';
 import { usePasswordStore } from "@/stores/vault-store";
 
 export default function ImportExportScreen() {
+  const scheme = useEffectiveColorScheme();
   const entries = usePasswordStore((s) => s.passwords);
   const importPreviewRowsFn = usePasswordStore((s) => s.importPreviewRows);
   const sheetRef = React.useRef<BottomSheetModal>(null);
@@ -71,21 +76,28 @@ export default function ImportExportScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={{ paddingBottom: 160 }} className="flex-1 bg-navy-950 px-8 pt-24">
-      <Text className="font-display text-3xl text-slate-100 mb-8">Vault transport</Text>
+    <ScrollView contentContainerStyle={{ paddingBottom: 160 }} className="flex-1 bg-slate-100 dark:bg-navy-950 px-8 pt-24">
+      <VaultScreenHeader title="Vault transport" className="mb-8" />
       <ExportWarningBanner />
 
-      <Pressable onPress={() => selectExport("generic")} className="rounded-2xl border border-white/10 bg-indigo-500/75 py-5 mb-6">
-        <Text className="text-slate-100 text-center font-semibold">Export CSV</Text>
-      </Pressable>
+      <VaultButton
+        label="Export CSV"
+        onPress={() => selectExport("generic")}
+        className="mb-6 border-indigo-500/40 bg-indigo-500/75"
+      />
 
-      <Pressable onPress={() => selectExport("1password")} className="rounded-2xl border border-white/10 bg-navy-900 py-5 mb-10">
-        <Text className="text-indigo-200 text-center font-semibold">Export · 1Password schema</Text>
-      </Pressable>
+      <VaultButton
+        label="Export · 1Password schema"
+        variant="secondary"
+        onPress={() => selectExport("1password")}
+        className="mb-10"
+      />
 
-      <Pressable onPress={() => pickFile()} className="rounded-2xl border border-dashed border-indigo-300/70 bg-navy-900/60 py-6">
-        <Text className="text-slate-100 text-center text-lg font-semibold">Import CSV / Bitwarden JSON</Text>
-        <Text className="text-slate-500 text-xs mt-4 text-center">Preview before encryption</Text>
+      <Pressable
+        onPress={() => pickFile()}
+        className="rounded-2xl border border-dashed border-indigo-500/50 dark:border-indigo-300/70 bg-slate-200/70 dark:bg-navy-900/60 py-6">
+        <Text className="text-slate-900 dark:text-slate-100 text-center text-lg font-semibold">Import CSV / Bitwarden JSON</Text>
+        <Text className="text-slate-600 dark:text-slate-500 text-xs mt-4 text-center">Preview before encryption</Text>
       </Pressable>
 
       <BottomSheetModal
@@ -96,14 +108,21 @@ export default function ImportExportScreen() {
         backdropComponent={(backdrop) => (
           <BottomSheetBackdrop {...backdrop} appearsOnIndex={0} disappearsOnIndex={-1} opacity={0.75} />
         )}
-        handleIndicatorStyle={{ backgroundColor: "#94A3B8" }}
-        backgroundStyle={{ backgroundColor: "#0D1426", borderTopLeftRadius: 24, borderTopRightRadius: 24 }}>
+        handleIndicatorStyle={{ backgroundColor: bottomSheetHandleIndicator(scheme) }}
+        backgroundStyle={{
+          backgroundColor: bottomSheetBackground(scheme),
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
+        }}>
         <BottomSheetView className="flex-1 px-6 pb-12">
-          <Text className="text-slate-100 text-xl font-semibold mb-6">Masked preview</Text>
+          <Text className="text-slate-900 dark:text-slate-100 text-xl font-semibold mb-6">Masked preview</Text>
           <ImportPreviewList rows={previewRows} />
-          <Pressable onPress={() => mergeImport(previewRows)} className="mt-12 rounded-xl bg-emerald-500 py-5 items-center">
-            <Text className="text-slate-50 font-semibold">Encrypt & stash</Text>
-          </Pressable>
+          <VaultButton
+            label="Encrypt & stash"
+            variant="danger"
+            onPress={() => mergeImport(previewRows)}
+            className="mt-12"
+          />
         </BottomSheetView>
       </BottomSheetModal>
     </ScrollView>

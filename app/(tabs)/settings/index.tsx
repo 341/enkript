@@ -1,7 +1,12 @@
 import { Link } from "expo-router";
-import { Pressable, Text, View } from "react-native";
+import { View } from "react-native";
+
+import { VaultLinkRow } from "@/components/ui/vault-link-row";
+import { VaultScreenHeader } from "@/components/ui/vault-screen-header";
+import { canAccessStorybook } from "@/lib/storybook-env";
 
 const rows = [
+  { title: "Appearance", href: "/(tabs)/settings/appearance" },
   { title: "Security", href: "/(tabs)/settings/security" },
   { title: "Autofill", href: "/(tabs)/settings/autofill" },
   { title: "Import / Export", href: "/(tabs)/settings/import-export" },
@@ -10,17 +15,19 @@ const rows = [
 
 export default function SettingsRoot() {
   return (
-    <View className="flex-1 bg-navy-950 px-8 pt-20">
-      <Text className="font-display text-3xl tracking-tight text-slate-100">Settings</Text>
-      <View className="mt-14 gap-y-5">
+    <View className="flex-1 bg-slate-100 dark:bg-navy-950 px-8 pt-20">
+      <VaultScreenHeader title="Settings" className="mb-14" />
+      <View className="gap-y-5">
         {rows.map((row) => (
           <Link href={row.href as never} key={row.title} asChild>
-            <Pressable className="rounded-2xl border border-white/[0.05] px-6 py-5 bg-navy-900 flex-row justify-between">
-              <Text className="text-slate-100 text-lg">{row.title}</Text>
-              <Text className="text-slate-500">→</Text>
-            </Pressable>
+            <VaultLinkRow title={row.title} />
           </Link>
         ))}
+        {canAccessStorybook ? (
+          <Link href="/storybook" asChild>
+            <VaultLinkRow title="Storybook" variant="accent" />
+          </Link>
+        ) : null}
       </View>
     </View>
   );

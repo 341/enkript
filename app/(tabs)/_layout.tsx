@@ -4,6 +4,13 @@ import { Fingerprint, KeyRound, Settings, Shuffle } from 'lucide-react-native';
 import { Platform, View } from 'react-native';
 
 import { CenteredIcon } from '@/components/vault/centered-icon';
+import { useEffectiveColorScheme } from '@/hooks/useEffectiveColorScheme';
+import {
+  tabAndroidBarBg,
+  tabBarActiveTint,
+  tabBarBorderTop,
+  tabBarInactiveTint,
+} from '@/lib/ui-theme';
 
 function tabIcon(Icon: typeof KeyRound) {
   return function TabBarGlyph({ color, size }: { color: string; size: number }) {
@@ -17,21 +24,34 @@ function tabIcon(Icon: typeof KeyRound) {
 }
 
 export default function TabLayout() {
+  const scheme = useEffectiveColorScheme();
+  const active = tabBarActiveTint(scheme);
+  const inactive = tabBarInactiveTint(scheme);
+  const borderTop = tabBarBorderTop(scheme);
+
+  const blurTint: 'light' | 'dark' = scheme === 'dark' ? 'dark' : 'light';
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#818CF8',
-        tabBarInactiveTintColor: '#64748B',
+        tabBarActiveTintColor: active,
+        tabBarInactiveTintColor: inactive,
         tabBarStyle: {
-          backgroundColor: Platform.OS === 'android' ? 'rgba(13,18,42,0.92)' : 'transparent',
-          borderTopColor: 'rgba(255,255,255,0.06)',
+          backgroundColor: Platform.OS === 'android' ? tabAndroidBarBg(scheme) : 'transparent',
+          borderTopColor: borderTop,
         },
         tabBarBackground: () =>
           Platform.OS === 'ios' ? (
-            <BlurView tint="dark" intensity={70} className="absolute inset-0 border-t border-white/5 bg-navy-900/85" />
+            <BlurView
+              tint={blurTint}
+              intensity={scheme === 'dark' ? 70 : 92}
+              className={`absolute inset-0 border-t ${scheme === 'dark' ? 'border-white/5 bg-navy-900/85' : 'border-slate-300 bg-white/80'}`}
+            />
           ) : (
-            <View className="flex-1 border-t border-white/5 bg-navy-900/95" />
+            <View
+              className={`flex-1 border-t ${scheme === 'dark' ? 'border-white/5 bg-navy-900/95' : 'border-slate-300 bg-white/95'}`}
+            />
           ),
       }}>
       <Tabs.Screen

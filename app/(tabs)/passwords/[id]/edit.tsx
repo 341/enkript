@@ -8,25 +8,19 @@ import {
   Pressable,
   ScrollView,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { useNavigation, usePreventRemove } from '@react-navigation/native';
 
+import { CategoryChipPicker } from '@/components/ui/category-chip-picker';
+import { VaultSectionLabel } from '@/components/ui/vault-section-label';
 import { GeneratorSheet } from "@/components/vault/generator-sheet";
 import { StrengthMeter } from "@/components/vault/strength-meter";
+import { VaultField, VaultTextField, VaultTextInput } from "@/components/vault/vault-text-field";
 
 import type { PasswordCategory } from "@/lib/types";
 
 import { usePasswordStore } from "@/stores/vault-store";
-
-const CATEGORIES: { key: PasswordCategory; label: string }[] = [
-  { key: "social", label: "Social" },
-  { key: "work", label: "Work" },
-  { key: "finance", label: "Finance" },
-  { key: "shopping", label: "Shopping" },
-  { key: "other", label: "Other" },
-];
 
 export default function EditPasswordScreen() {
   const navigation = useNavigation();
@@ -55,10 +49,17 @@ export default function EditPasswordScreen() {
 
   if (!entry) {
     return (
-      <View className="flex-1 bg-navy-950 justify-center px-12">
-        <Text className="text-slate-200">Credential missing.</Text>
+      <View className="flex-1 bg-slate-100 dark:bg-navy-950 justify-center px-12">
+        <Text className="text-slate-800 dark:text-slate-200">Credential missing.</Text>
       </View>
     );
+  }
+
+  function finalizeUrl(raw: string) {
+    let u = raw.trim();
+    if (!u) return "";
+    if (!/^https?:\/\//i.test(u)) u = `https://${u}`;
+    return u;
   }
 
   const dirty =
@@ -80,24 +81,17 @@ export default function EditPasswordScreen() {
     ]);
   });
 
-  function finalizeUrl(raw: string) {
-    let u = raw.trim();
-    if (!u) return "";
-    if (!/^https?:\/\//i.test(u)) u = `https://${u}`;
-    return u;
-  }
-
   const canSave = title.trim().length > 0 && password.trim().length > 0;
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={88}
-      className="flex-1 bg-navy-950 px-6 pt-16">
+      className="flex-1 bg-slate-100 dark:bg-navy-950 px-6 pt-16">
       <GeneratorSheet ref={sheetRef} onPick={setPassword} />
       <View className="flex-row justify-between mb-6">
         <Pressable accessibilityRole="button" onPress={() => router.back()}>
-          <Text className="text-xl text-indigo-300">←</Text>
+          <Text className="text-xl text-indigo-700 dark:text-indigo-300">←</Text>
         </Pressable>
         <Pressable accessibilityRole="button" disabled={!canSave} onPress={async () => {
           await updatePassword(entry.id, {
@@ -110,84 +104,64 @@ export default function EditPasswordScreen() {
           });
           router.back();
         }}>
-          <Text className={canSave ? "text-indigo-400 font-semibold" : "text-slate-600"}>Save</Text>
+          <Text className={canSave ? 'text-indigo-600 dark:text-indigo-400 font-semibold' : 'text-slate-400'}>
+            Save
+          </Text>
         </Pressable>
       </View>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 120 }}>
-        <Text className="text-slate-100 font-display text-2xl">Edit credential</Text>
-        <PasswordField lab="TITLE" val={title} onChange={setTitle} />
+        <Text className="text-slate-900 dark:text-slate-100 font-display text-2xl">Edit credential</Text>
 
-        <PasswordField lab="USERNAME" val={username} onChange={setUsername} email keyboardType="email-address" />
+        <VaultTextField label="Title" value={title} onChangeText={setTitle} />
 
-        <View className="mt-10 gap-y-2">
-          <Text className="text-[11px] text-slate-500 tracking-[0.3em]">PASSWORD</Text>
-          <TextInput
+        <VaultTextField
+          label="Username"
+          value={username}
+          onChangeText={setUsername}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          placeholder="you@example.com"
+        />
+
+        <VaultField label="Password">
+          <VaultTextInput
+            variant="credential"
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!visible}
-            className="mt-3 rounded-xl bg-navy-800 px-4 py-3 border border-white/5 text-base font-mono text-indigo-200"
           />
           <StrengthMeter password={password} />
           <View className="flex-row mt-4 gap-6">
             <Pressable onPress={() => setVisible((v) => !v)}>
-              <Text className="text-indigo-300 text-sm">{visible ? "Hide" : "Show"}</Text>
+              <Text className="text-indigo-700 dark:text-indigo-300 text-sm">{visible ? "Hide" : "Show"}</Text>
             </Pressable>
             <Pressable onPress={() => sheetRef.current?.present()}>
-              <Text className="text-indigo-300 text-sm font-semibold">Generate</Text>
+              <Text className="text-indigo-700 dark:text-indigo-300 text-sm font-semibold">Generate</Text>
             </Pressable>
           </View>
-        </View>
+        </VaultField>
 
-        <PasswordField
-          lab="URL"
-          val={url}
+        <VaultTextField
+          label="URL"
+          value={url}
           onBlur={() => setUrl(finalizeUrl(url))}
-          onChange={(t) => setUrl(t)}
+          onChangeText={setUrl}
+          autoCapitalize="none"
+          placeholder="https://…"
         />
 
-        <View className="mt-12">
-          <Text className="text-[11px] text-slate-500 tracking-[0.3em]">{`NOTES (${notes.length}/500)`}</Text>
-          <TextInput
-            multiline
-            maxLength={500}
-            value={notes}
-            onChangeText={setNotes}
-            className="mt-4 rounded-xl bg-navy-800 px-4 py-3 border border-white/5 font-mono text-sm text-slate-100 min-h-[120]"
-          />
-        </View>
+        <VaultTextField
+          label={`Notes (${notes.length}/500)`}
+          variant="multiline"
+          multiline
+          maxLength={500}
+          value={notes}
+          onChangeText={setNotes}
+        />
 
-        <Text className="text-[11px] text-slate-500 mt-14 tracking-[0.2em] uppercase">category</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-3">
-          {CATEGORIES.map(({ key, label }) => (
-            <Pressable key={key} onPress={() => setCategory(key)} className={`px-5 py-2 rounded-xl mr-3 border ${category===key?"bg-indigo-500":"bg-navy-900 border-white/10"}`}>
-              <Text className="text-slate-50 text-sm">{label}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
+        <VaultSectionLabel className="mt-14 tracking-[0.2em]">category</VaultSectionLabel>
+        <CategoryChipPicker value={category} onChange={setCategory} />
       </ScrollView>
     </KeyboardAvoidingView>
-  );
-}
-
-function PasswordField(props: {
-  lab: string;
-  val: string;
-  onChange?: (text: string) => void;
-  onBlur?: () => void;
-  email?: boolean;
-  keyboardType?: "email-address" | "default";
-}) {
-  return (
-    <View className="mt-10">
-      <Text className="text-[11px] text-slate-500 tracking-[0.3em]">{props.lab}</Text>
-      <TextInput
-        value={props.val}
-        onChangeText={props.onChange}
-        onBlur={props.onBlur}
-        autoCapitalize={props.email ? "none" : "sentences"}
-        keyboardType={props.keyboardType}
-        className="mt-3 rounded-xl bg-navy-800 px-4 py-3 border border-white/5 text-base text-slate-100"
-      />
-    </View>
   );
 }

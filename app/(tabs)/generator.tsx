@@ -6,10 +6,21 @@ import Slider from "@react-native-community/slider";
 
 import { useVaultCopyToast } from "@/components/vault/copy-toast-host";
 import { StrengthMeter } from "@/components/vault/strength-meter";
+import { useEffectiveColorScheme } from "@/hooks/useEffectiveColorScheme";
 import { countEnabledTypes, generateSecurePassword, type GeneratorFlags } from "@/lib/generate-password";
 import { estimatePasswordEntropyBits, strengthFromEntropy } from "@/lib/password-entropy";
+import {
+  bottomSheetBackground,
+  sliderMaximumTrackTint,
+  sliderMinimumTrackTint,
+  sliderThumbTint,
+  switchThumbColor,
+  switchTrackColorOff,
+  switchTrackColorOn,
+} from "@/lib/ui-theme";
 
 export default function StandaloneGenerator() {
+  const scheme = useEffectiveColorScheme();
   const sheetRef = React.useRef<BottomSheetModal>(null);
   const toast = useVaultCopyToast();
 
@@ -38,9 +49,11 @@ export default function StandaloneGenerator() {
   const label = strengthFromEntropy(bits);
 
   return (
-    <View className="flex-1 bg-navy-950 px-7 pt-20">
-      <Text className="font-display text-3xl tracking-tight text-slate-100">Generator</Text>
-      <Text className="text-slate-400 mt-2">Length {Math.round(len)} · {bits} bits · {label}</Text>
+    <View className="flex-1 bg-slate-100 dark:bg-navy-950 px-7 pt-20">
+      <Text className="font-display text-3xl tracking-tight text-slate-900 dark:text-slate-100">Generator</Text>
+      <Text className="text-slate-600 dark:text-slate-400 mt-2">
+        Length {Math.round(len)} · {bits} bits · {label}
+      </Text>
 
       <Slider
         className="mt-8"
@@ -49,14 +62,18 @@ export default function StandaloneGenerator() {
         step={1}
         value={len}
         onValueChange={(v) => setLen(v)}
-        minimumTrackTintColor="#6366F1"
-        maximumTrackTintColor="#1B2847"
-        thumbTintColor="#818CF8"
+        minimumTrackTintColor={sliderMinimumTrackTint(scheme)}
+        maximumTrackTintColor={sliderMaximumTrackTint(scheme)}
+        thumbTintColor={sliderThumbTint(scheme)}
       />
 
       {(["upper", "lower", "number", "symbol"] as const).map((key) => (
-        <View key={key} className="flex-row items-center justify-between py-3 border-b border-white/5">
-          <Text className="text-slate-200 capitalize">{key === "number" ? "Numbers" : `${key}case`}</Text>
+        <View
+          key={key}
+          className="flex-row items-center justify-between py-3 border-b border-slate-200 dark:border-white/5">
+          <Text className="text-slate-800 dark:text-slate-200 capitalize">
+            {key === "number" ? "Numbers" : `${key}case`}
+          </Text>
           <Switch
             value={flags[key]}
             onValueChange={(v) => {
@@ -64,15 +81,17 @@ export default function StandaloneGenerator() {
               if (countEnabledTypes(next) < 2) return;
               setFlags(next);
             }}
-            trackColor={{ false: "#1B2847", true: "#4F46E5" }}
-            thumbColor="#E2E8F0"
+            trackColor={{ false: switchTrackColorOff(scheme), true: switchTrackColorOn }}
+            thumbColor={switchThumbColor}
           />
         </View>
       ))}
 
-      <View className="mt-8 rounded-2xl bg-navy-900 border border-white/5 p-4">
-        <Text className="text-xs text-slate-500 uppercase tracking-[0.8em]">preview</Text>
-        <Text selectable className="font-mono text-lg text-slate-100 mt-4">{preview}</Text>
+      <View className="mt-8 rounded-2xl bg-white dark:bg-navy-900 border border-slate-200 dark:border-white/5 p-4">
+        <Text className="text-xs text-slate-600 dark:text-slate-500 uppercase tracking-[0.8em]">preview</Text>
+        <Text selectable className="font-mono text-lg text-slate-900 dark:text-slate-100 mt-4">
+          {preview}
+        </Text>
         <StrengthMeter password={preview} />
       </View>
 
@@ -80,8 +99,8 @@ export default function StandaloneGenerator() {
         <Pressable
           accessibilityRole="button"
           onPress={() => setPreview(generateSecurePassword(Math.round(len), flags))}
-          className="flex-1 rounded-xl border border-white/10 py-3 items-center">
-          <Text className="text-slate-100 font-semibold">Regenerate</Text>
+          className="flex-1 rounded-xl border border-slate-300 dark:border-white/10 py-3 items-center">
+          <Text className="text-slate-900 dark:text-slate-100 font-semibold">Regenerate</Text>
         </Pressable>
         <Pressable
           accessibilityRole="button"
@@ -101,10 +120,10 @@ export default function StandaloneGenerator() {
         backdropComponent={(p) => (
           <BottomSheetBackdrop {...p} appearsOnIndex={0} disappearsOnIndex={-1} opacity={0.55} />
         )}
-        backgroundStyle={{ backgroundColor: "#0D1426" }}>
+        backgroundStyle={{ backgroundColor: bottomSheetBackground(scheme) }}>
         <BottomSheetView className="px-8 py-6">
-          <Text className="text-slate-200 text-lg font-semibold">Quick tip</Text>
-          <Text className="text-slate-400 mt-3 leading-relaxed">
+          <Text className="text-slate-800 dark:text-slate-200 text-lg font-semibold">Quick tip</Text>
+          <Text className="text-slate-600 dark:text-slate-400 mt-3 leading-relaxed">
             Use the generator tab for quick random strings. When editing logins, open the built-in sheet for one-tap paste.
           </Text>
         </BottomSheetView>

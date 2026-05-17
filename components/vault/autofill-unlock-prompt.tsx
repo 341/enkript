@@ -1,3 +1,4 @@
+// [VaultUnlock · Step 7] Post-unlock AutoFill onboarding — not part of PIN verify on /lock.
 import { useRouter, usePathname, useSegments } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { Alert, Platform } from 'react-native';
@@ -19,10 +20,7 @@ function isPasswordsListRoute(segments: readonly string[], pathname: string | un
   );
 }
 
-/**
- * After a successful lock-screen unlock, offers to open the in-app AutoFill guide
- * (system settings must still grant AutoFill there).
- */
+/** [VaultUnlock · Step 7] Consumes postUnlockAutofillPrompt set in lock.tsx after successful unlock. */
 export function AutofillUnlockPrompt() {
   const segments = useSegments();
   const pathname = usePathname();
@@ -37,6 +35,7 @@ export function AutofillUnlockPrompt() {
     if (!isPasswordsListRoute(segments, pathname)) return;
 
     const lock = useVaultLockStore.getState();
+    // [VaultUnlock · Step 7] Only after unlock; flag cleared so prompt shows once per unlock.
     if (!lock.postUnlockAutofillPrompt) return;
     if (busyRef.current) return;
 

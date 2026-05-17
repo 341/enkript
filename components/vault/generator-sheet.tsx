@@ -4,6 +4,17 @@ import { Pressable, Switch, Text, View } from 'react-native';
 import Slider from '@react-native-community/slider';
 
 import { StrengthMeter } from '@/components/vault/strength-meter';
+import { useEffectiveColorScheme } from '@/hooks/useEffectiveColorScheme';
+import {
+  bottomSheetBackground,
+  bottomSheetHandleIndicator,
+  sliderMaximumTrackTint,
+  sliderMinimumTrackTint,
+  sliderThumbTint,
+  switchThumbColor,
+  switchTrackColorOff,
+  switchTrackColorOn,
+} from '@/lib/ui-theme';
 import {
   countEnabledTypes,
   generateSecurePassword,
@@ -38,6 +49,8 @@ export const GeneratorSheet = forwardRef<BottomSheetModal, Props>(function Gener
   const bits = estimatePasswordEntropyBits(preview);
   const strength = strengthFromEntropy(bits);
 
+  const scheme = useEffectiveColorScheme();
+
   const validTypes = countEnabledTypes(flags) >= 2;
 
   return (
@@ -49,18 +62,24 @@ export const GeneratorSheet = forwardRef<BottomSheetModal, Props>(function Gener
       backdropComponent={(p) => (
         <BottomSheetBackdrop {...p} appearsOnIndex={0} disappearsOnIndex={-1} opacity={0.7} />
       )}
-      backgroundStyle={{ backgroundColor: '#0D1426', borderTopLeftRadius: 20, borderTopRightRadius: 20 }}
-      handleIndicatorStyle={{ backgroundColor: '#94A3B8' }}>
+      backgroundStyle={{
+        backgroundColor: bottomSheetBackground(scheme),
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+      }}
+      handleIndicatorStyle={{ backgroundColor: bottomSheetHandleIndicator(scheme) }}>
       <BottomSheetView className="flex-1 px-6 pb-10">
         <View className="flex-row items-center justify-between mb-4">
-          <Text className="font-sans text-lg font-semibold text-slate-200">Password generator</Text>
+          <Text className="font-sans text-lg font-semibold text-slate-800 dark:text-slate-200">
+            Password generator
+          </Text>
           <Pressable
             onPress={applyRegen}
-            className="rounded-lg bg-navy-800 px-3 py-2 border border-white/5">
-            <Text className="text-indigo-400 text-sm font-medium">Regenerate</Text>
+            className="rounded-lg bg-slate-200 dark:bg-navy-800 px-3 py-2 border border-slate-300 dark:border-white/5">
+            <Text className="text-indigo-600 dark:text-indigo-400 text-sm font-medium">Regenerate</Text>
           </Pressable>
         </View>
-        <Text className="text-slate-400 text-xs mb-2">Length ({Math.round(len)})</Text>
+        <Text className="text-slate-600 dark:text-slate-400 text-xs mb-2">Length ({Math.round(len)})</Text>
         <Slider
           minimumValue={8}
           maximumValue={64}
@@ -71,15 +90,17 @@ export const GeneratorSheet = forwardRef<BottomSheetModal, Props>(function Gener
             const p = generateSecurePassword(Math.round(v), flags);
             setPreview(p);
           }}
-          minimumTrackTintColor="#6366F1"
-          maximumTrackTintColor="#1B2847"
-          thumbTintColor="#818CF8"
+          minimumTrackTintColor={sliderMinimumTrackTint(scheme)}
+          maximumTrackTintColor={sliderMaximumTrackTint(scheme)}
+          thumbTintColor={sliderThumbTint(scheme)}
         />
         {(['upper', 'lower', 'number', 'symbol'] as const).map((key) => (
           <View
             key={key}
-            className="flex-row items-center justify-between py-2 border-b border-white/5">
-            <Text className="text-slate-200 capitalize">{key === 'number' ? 'Numbers' : `${key}case`}</Text>
+            className="flex-row items-center justify-between py-2 border-b border-slate-200 dark:border-white/5">
+            <Text className="text-slate-800 dark:text-slate-200 capitalize">
+              {key === 'number' ? 'Numbers' : `${key}case`}
+            </Text>
             <Switch
               value={flags[key]}
               onValueChange={(v) => {
@@ -89,20 +110,20 @@ export const GeneratorSheet = forwardRef<BottomSheetModal, Props>(function Gener
                 setFlags(next);
                 setPreview(generateSecurePassword(Math.round(len), next));
               }}
-              trackColor={{ false: '#1B2847', true: '#4F46E5' }}
-              thumbColor="#E2E8F0"
+              trackColor={{ false: switchTrackColorOff(scheme), true: switchTrackColorOn }}
+              thumbColor={switchThumbColor}
             />
           </View>
         ))}
         {!validTypes ? (
-          <Text className="text-rose-400 text-xs mt-2">Enable at least two character types.</Text>
+          <Text className="text-rose-600 dark:text-rose-400 text-xs mt-2">Enable at least two character types.</Text>
         ) : null}
-        <View className="mt-4 rounded-lg bg-navy-800 p-3 border border-white/5">
-          <Text className="text-slate-400 text-[10px] uppercase tracking-wide">Preview</Text>
-          <Text selectable className="font-mono text-[13px] text-slate-100 mt-2">
+        <View className="mt-4 rounded-lg bg-slate-200 dark:bg-navy-800 p-3 border border-slate-300 dark:border-white/5">
+          <Text className="text-slate-600 dark:text-slate-400 text-[10px] uppercase tracking-wide">Preview</Text>
+          <Text selectable className="font-mono text-[13px] text-slate-900 dark:text-slate-100 mt-2">
             {preview}
           </Text>
-          <Text className="text-slate-400 text-xs mt-2">
+          <Text className="text-slate-600 dark:text-slate-400 text-xs mt-2">
             {bits} bits · {strength}
           </Text>
         </View>
@@ -118,7 +139,7 @@ export const GeneratorSheet = forwardRef<BottomSheetModal, Props>(function Gener
               ref.current?.dismiss();
             }
           }}
-          className={`mt-6 rounded-lg py-3 items-center ${validTypes ? 'bg-indigo-500' : 'bg-navy-700'}`}>
+          className={`mt-6 rounded-lg py-3 items-center ${validTypes ? 'bg-indigo-500' : 'bg-slate-300 dark:bg-navy-700'}`}>
           <Text className="text-slate-100 font-semibold">Use this password</Text>
         </Pressable>
       </BottomSheetView>

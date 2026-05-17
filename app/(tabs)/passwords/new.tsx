@@ -8,25 +8,19 @@ import {
   Pressable,
   ScrollView,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { useNavigation, usePreventRemove } from "@react-navigation/native";
 
+import { CategoryChipPicker } from '@/components/ui/category-chip-picker';
+import { VaultSectionLabel } from '@/components/ui/vault-section-label';
 import { GeneratorSheet } from "@/components/vault/generator-sheet";
 import { StrengthMeter } from "@/components/vault/strength-meter";
+import { VaultField, VaultTextField, VaultTextInput } from "@/components/vault/vault-text-field";
 
 import type { PasswordCategory } from "@/lib/types";
 
 import { usePasswordStore } from "@/stores/vault-store";
-
-const CATEGORIES: { key: PasswordCategory; label: string }[] = [
-  { key: "social", label: "Social" },
-  { key: "work", label: "Work" },
-  { key: "finance", label: "Finance" },
-  { key: "shopping", label: "Shopping" },
-  { key: "other", label: "Other" },
-];
 
 export default function NewPasswordScreen() {
   const navigation = useNavigation();
@@ -68,13 +62,13 @@ export default function NewPasswordScreen() {
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={88}
-      className="flex-1 bg-navy-950 px-6 pt-16">
+      className="flex-1 bg-slate-100 dark:bg-navy-950 px-6 pt-16">
       <GeneratorSheet ref={sheetRef} onPick={setPassword} />
       <View className="flex-row items-center justify-between mb-6">
         <Pressable accessibilityRole="button" onPress={() => router.back()}>
-          <Text className="text-indigo-300 text-lg">←</Text>
+          <Text className="text-indigo-700 dark:text-indigo-300 text-lg">←</Text>
         </Pressable>
-        <Text className="text-slate-100 font-display text-xl">New credential</Text>
+        <Text className="text-slate-900 dark:text-slate-100 font-display text-xl">New credential</Text>
         <Pressable accessibilityRole="button" disabled={!canSave} onPress={async () => {
           await addPassword({
             title: title.trim(),
@@ -86,89 +80,62 @@ export default function NewPasswordScreen() {
           });
           router.back();
         }}>
-          <Text className={`text-base ${canSave ? "text-indigo-400 font-semibold" : "text-slate-600"}`}>Save</Text>
+          <Text className={`text-base ${canSave ? 'text-indigo-600 dark:text-indigo-400 font-semibold' : 'text-slate-400'}`}>
+            Save
+          </Text>
         </Pressable>
       </View>
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }} keyboardShouldPersistTaps="handled">
-        <Field label="TITLE" optional={false}>
-          <TextInput
-            value={title}
-            placeholder="GitHub"
-            placeholderTextColor="#64748B"
-            onChangeText={setTitle}
-            className="mt-3 rounded-xl bg-navy-800 px-4 py-3 border border-white/5 text-base text-slate-100 font-sans"
-          />
-        </Field>
-        <Field label="USERNAME OR EMAIL">
-          <TextInput
-            value={username}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            placeholder="you@example.com"
-            placeholderTextColor="#64748B"
-            onChangeText={setUsername}
-            className="mt-3 rounded-xl bg-navy-800 px-4 py-3 border border-white/5 text-base text-slate-100 font-sans"
-          />
-        </Field>
-        <Field label="PASSWORD">
-          <TextInput
+        <VaultTextField
+          label="Title"
+          value={title}
+          placeholder="GitHub"
+          onChangeText={setTitle}
+        />
+        <VaultTextField
+          label="Username or email"
+          value={username}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          placeholder="you@example.com"
+          onChangeText={setUsername}
+        />
+        <VaultField label="Password">
+          <VaultTextInput
+            variant="credential"
             value={password}
             secureTextEntry={!visible}
             onChangeText={setPassword}
-            className="mt-3 rounded-xl bg-navy-800 px-4 py-3 border border-white/5 text-base font-mono text-indigo-200"
           />
           <StrengthMeter password={password} />
           <View className="flex-row mt-4 gap-6">
             <Pressable accessibilityRole="button" onPress={() => setVisible((x) => !x)}>
-              <Text className="text-indigo-300 text-sm font-medium">{visible ? "Hide" : "Show"}</Text>
+              <Text className="text-indigo-700 dark:text-indigo-300 text-sm font-medium">{visible ? "Hide" : "Show"}</Text>
             </Pressable>
             <Pressable accessibilityRole="button" onPress={() => sheetRef.current?.present()}>
-              <Text className="text-indigo-300 text-sm font-medium">Generate</Text>
+              <Text className="text-indigo-700 dark:text-indigo-300 text-sm font-medium">Generate</Text>
             </Pressable>
           </View>
-        </Field>
-        <Field label="URL">
-          <TextInput
-            value={url}
-            onBlur={() => setUrl(finalizeUrl(url))}
-            autoCapitalize="none"
-            placeholder="github.com/login"
-            placeholderTextColor="#64748B"
-            onChangeText={setUrl}
-            className="mt-3 rounded-xl bg-navy-800 px-4 py-3 border border-white/5 text-base text-slate-100 font-sans"
-          />
-        </Field>
-        <Field label={`NOTES (${notes.length}/500)`}>
-          <TextInput
-            value={notes}
-            multiline
-            maxLength={500}
-            onChangeText={setNotes}
-            className="mt-3 rounded-xl bg-navy-800 px-4 py-3 border border-white/5 font-mono text-sm text-slate-100 leading-6 min-h-[120]"
-          />
-        </Field>
-        <Text className="text-[11px] text-slate-500 mt-10 tracking-[0.2em] uppercase">category</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-3 flex-row gap-3">
-          {CATEGORIES.map(({ key, label }) => (
-            <Pressable key={key} onPress={() => setCategory(key)} className={`px-5 py-2 rounded-xl border mr-3 ${
-              category === key ? "bg-indigo-500/80 border-transparent" : "bg-navy-900 border-white/10"
-            }`}>
-              <Text className="text-slate-50 text-sm">{label}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
+        </VaultField>
+        <VaultTextField
+          label="URL"
+          value={url}
+          onBlur={() => setUrl(finalizeUrl(url))}
+          autoCapitalize="none"
+          placeholder="github.com/login"
+          onChangeText={setUrl}
+        />
+        <VaultTextField
+          label={`Notes (${notes.length}/500)`}
+          variant="multiline"
+          value={notes}
+          multiline
+          maxLength={500}
+          onChangeText={setNotes}
+        />
+        <VaultSectionLabel className="mt-10 tracking-[0.2em]">category</VaultSectionLabel>
+        <CategoryChipPicker value={category} onChange={setCategory} />
       </ScrollView>
     </KeyboardAvoidingView>
-  );
-}
-
-function Field(props: { label: string; optional?: boolean; children: React.ReactNode }) {
-  return (
-    <View className="mt-10">
-      <Text className="text-[11px] text-slate-500 tracking-[0.35em] font-semibold">
-        {props.label.toUpperCase()}
-      </Text>
-      {props.children}
-    </View>
   );
 }

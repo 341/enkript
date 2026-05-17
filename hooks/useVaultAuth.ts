@@ -1,3 +1,4 @@
+// Not on main unlock path (Steps 4–6). Biometrics for reveal-password / passkeys in settings & detail screens.
 import * as LocalAuth from 'expo-local-authentication';
 
 export async function canUseBiometrics(): Promise<boolean> {

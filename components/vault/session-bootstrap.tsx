@@ -1,8 +1,10 @@
+// [VaultUnlock · Steps 1, 3, 8] Headless bootstrap: cold boot, runtime nav sync, background auto-lock.
 import { usePathname, useRouter, useSegments } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 
 import { navigateToVaultLock } from '@/lib/navigate-vault-lock';
+import { canAccessStorybook } from '@/lib/storybook-env';
 import { loadStoredLockTimeout } from '@/lib/vault-repository';
 import { hasPinConfigured } from '@/lib/pin-session';
 import { useBootGateStore } from '@/stores/boot-gate-store';
@@ -18,11 +20,17 @@ function isShowingLockRoute(pathname: string, segments: readonly string[]): bool
   return segments.length > 0 && segments[0] === 'lock';
 }
 
+function isStorybookRoute(pathname: string): boolean {
+  return pathname.replace(/\/$/, '') === '/storybook';
+}
+
+/** [VaultUnlock · Step 1] Runs once on mount: restore prefs, detect PIN, set lock state, unblock routing. */
 export function VaultColdBoot() {
   const markConfigured = useBootGateStore((s) => s.markConfigured);
 
   useEffect(() => {
     (async () => {
+      // [VaultUnlock · Step 1] Sequential awaits — each must finish before markConfigured unblocks app/index.
       const storedPeriod = await loadStoredLockTimeout();
       if (storedPeriod === Number.POSITIVE_INFINITY) {
         useVaultLockStore.setState({ lockAfterSeconds: NEVER_LOCK_SECONDS });
@@ -34,12 +42,15 @@ export function VaultColdBoot() {
       if (__DEV__) {
         console.log('[VaultColdBoot]', 'pin check done', { hasPin });
       }
+      // [VaultUnlock · Step 1] sessionReady + vaultHasPin — RootIndex waits on this before redirecting.
       markConfigured(hasPin);
 
       if (!hasPin) {
+        // [VaultUnlock · Step 6] No PIN yet: stay unlocked and load vault for first-run / pre-wizard use.
         useVaultLockStore.setState({ vaultLocked: false });
         await useVaultStore.getState().hydrateFromDisk();
       } else {
+        // [VaultUnlock · Step 1] PIN exists: start locked until user completes Step 4 on /lock.
         useVaultLockStore.setState({ vaultLocked: true });
       }
     })();
@@ -48,6 +59,7 @@ export function VaultColdBoot() {
   return null;
 }
 
+/** [VaultUnlock · Step 3] Keeps Expo Router pathname aligned with vaultLocked after boot and unlock. */
 export function VaultRuntimeNav() {
   const pathname = usePathname();
   const segments = useSegments();
@@ -62,8 +74,14 @@ export function VaultRuntimeNav() {
       return;
     }
 
+    if (canAccessStorybook && isStorybookRoute(pathname)) {
+      if (__DEV__) console.log(LOG, 'skip: storybook route');
+      return;
+    }
+
     const onLockRoute = isShowingLockRoute(pathname, segments);
 
+    // [VaultUnlock · Step 3] First-time PIN wizard on /lock — do not redirect away.
     if (!vaultHasPin) {
       if (__DEV__) {
         console.log(LOG, 'no PIN yet — leave navigation alone (setup wizard on /lock)', {
@@ -77,9 +95,11 @@ export function VaultRuntimeNav() {
       return;
     }
 
+    // [VaultUnlock · Step 3] Locked but browsing tabs — force /lock.
     if (locked && !onLockRoute) {
       if (__DEV__) console.log(LOG, '→ navigateToVaultLock (locked, not on /lock)', { pathname, segments: [...segments] });
       navigateToVaultLock();
+    // [VaultUnlock · Step 3] Unlocked on lock screen — enter main app.
     } else if (!locked && onLockRoute) {
       if (__DEV__) console.log(LOG, '→ replace /(tabs)/passwords (unlocked on /lock)', { pathname });
       router.replace('/(tabs)/passwords');
@@ -91,6 +111,7 @@ export function VaultRuntimeNav() {
   return null;
 }
 
+/** [VaultUnlock · Step 8] Auto-lock after background idle; re-enters flow at Steps 3–4. */
 export function VaultAutosleepWatcher() {
   const backgroundAt = useRef<number | null>(null);
 
@@ -99,6 +120,7 @@ export function VaultAutosleepWatcher() {
       if (!useBootGateStore.getState().sessionReady) return;
       if (!useBootGateStore.getState().vaultHasPin) return;
 
+      // [VaultUnlock · Step 8] Record when app left foreground for elapsed-time check.
       if (next.match(/inactive|background/)) {
         backgroundAt.current = Date.now();
         return;
@@ -116,6 +138,7 @@ export function VaultAutosleepWatcher() {
       const shouldSleep =
         lockAfterSeconds !== NEVER_LOCK_SECONDS && elapsed >= lockAfterSeconds && !vaultLocked;
 
+      // [VaultUnlock · Step 8] Lock, wipe in-memory secrets, navigate — same path as manual lock.
       if (shouldSleep) {
         useVaultLockStore.getState().lock();
         useVaultStore.getState().clearMemoryForLock();

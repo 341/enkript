@@ -1,4 +1,5 @@
-import { useState } from 'react';
+// [VaultUnlock · Step 4] Variable-length PIN entry (4–6); defers onComplete for async verify/hash.
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 type Props = {
@@ -17,6 +18,15 @@ const ROWS = [
 
 export function PinPad({ length = 6, onComplete, disabled = false }: Props) {
   const [digits, setDigits] = useState('');
+  const wasDisabled = useRef(disabled);
+
+  // Clear entry when parent finishes async work (e.g. wrong PIN → unlockSubmitting false).
+  useEffect(() => {
+    if (wasDisabled.current && !disabled) {
+      setDigits('');
+    }
+    wasDisabled.current = disabled;
+  }, [disabled]);
 
   function press(key: string) {
     if (disabled) return;
@@ -29,10 +39,7 @@ export function PinPad({ length = 6, onComplete, disabled = false }: Props) {
       if (d.length >= length) return d;
       const next = d + key;
       if (next.length === length) {
-        queueMicrotask(() => {
-          onComplete(next);
-          setDigits('');
-        });
+        queueMicrotask(() => onComplete(next));
       }
       return next;
     });
@@ -44,7 +51,7 @@ export function PinPad({ length = 6, onComplete, disabled = false }: Props) {
         {Array.from({ length }).map((_, i) => (
           <View
             key={`dot-${String(i)}`}
-            className={`h-3 w-3 rounded-full border border-slate-500 ${i < digits.length ? 'bg-indigo-400' : 'bg-transparent'}`}
+            className={`h-3 w-3 rounded-full border border-slate-400 dark:border-slate-500 ${i < digits.length ? 'bg-indigo-500 dark:bg-indigo-400' : 'bg-transparent'}`}
           />
         ))}
       </View>
@@ -61,8 +68,8 @@ export function PinPad({ length = 6, onComplete, disabled = false }: Props) {
                   key={cell}
                   disabled={disabled}
                   onPress={() => press(cell)}
-                  className="w-[72px] h-[54px] items-center justify-center rounded-xl bg-navy-800 border border-white/10 active:bg-navy-700">
-                  <Text className="text-slate-100 text-xl font-semibold">{cell === 'bksp' ? '⌫' : cell}</Text>
+                  className="w-[72px] h-[54px] items-center justify-center rounded-xl bg-slate-200 border border-slate-300 dark:bg-navy-800 dark:border-white/10 active:bg-slate-300 dark:active:bg-navy-700">
+                  <Text className="text-slate-900 dark:text-slate-100 text-xl font-semibold">{cell === 'bksp' ? '⌫' : cell}</Text>
                 </Pressable>
               ),
             )}

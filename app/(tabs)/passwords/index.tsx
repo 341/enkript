@@ -1,14 +1,17 @@
 import { Link, router } from 'expo-router';
-import { Plus, Search, Settings } from 'lucide-react-native';
+import { Plus, Settings } from 'lucide-react-native';
 import * as React from 'react';
 import { useDeferredValue } from 'react';
-import { Alert, type AlertButton, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, type AlertButton, RefreshControl, ScrollView, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
-import { CenteredIcon } from '@/components/vault/centered-icon';
 import { VaultCard } from '@/components/vault/vault-card';
+import { VaultSearchField } from '@/components/vault/vault-text-field';
+import { useEffectiveColorScheme } from '@/hooks/useEffectiveColorScheme';
 
 import type { PasswordCategory, PasswordEntry } from '@/lib/types';
+
+import { activityIndicatorTint } from '@/lib/ui-theme';
 
 import { useVaultLockStore } from '@/stores/vault-lock-store';
 import { usePasswordStore } from '@/stores/vault-store';
@@ -37,6 +40,9 @@ function group(entries: PasswordEntry[]) {
 }
 
 export default function PasswordListScreen() {
+  const scheme = useEffectiveColorScheme();
+  const accent = activityIndicatorTint(scheme);
+
   const updateLastActive = useVaultLockStore((s) => s.updateLastActive);
   React.useEffect(() => {
     updateLastActive();
@@ -91,32 +97,21 @@ export default function PasswordListScreen() {
   }
 
   return (
-    <View className="flex-1 bg-navy-950">
+    <View className="flex-1 bg-slate-100 dark:bg-navy-950">
       <View className="pt-14 px-6 pb-4 flex-row items-center justify-between">
         <View>
-          <Text className="font-display text-2xl tracking-tight text-slate-100">Vault</Text>
-          <Text className="text-[11px] text-slate-500 mt-1">Encrypted password stash</Text>
+          <Text className="font-display text-2xl tracking-tight text-slate-900 dark:text-slate-100">Vault</Text>
+          <Text className="text-[11px] text-slate-600 dark:text-slate-500 mt-1">Encrypted password stash</Text>
         </View>
         <Link
           href="/(tabs)/settings"
-          className="h-22 w-22 rounded-full bg-navy-900 border p-2 border-white/10 overflow-hidden flex items-center justify-center">
-            <Settings color="#818CF8" size={22} strokeWidth={2.25} />
+          className="h-22 w-22 rounded-full bg-white dark:bg-navy-900 border border-slate-200 dark:border-white/10 p-2 overflow-hidden flex items-center justify-center">
+          <Settings color={accent} size={22} strokeWidth={2.25} />
         </Link>
       </View>
 
       <View className="px-6 mb-5">
-        <View className="rounded-lg bg-navy-800 border border-white/[0.04] pl-3 pr-4 py-2 flex-row items-center gap-2 min-h-[48px]">
-          <CenteredIcon size={20}>
-            <Search color="#64748b" size={20} strokeWidth={2.25} />
-          </CenteredIcon>
-          <TextInput
-            placeholder="Search passwords…"
-            placeholderTextColor="#64748b"
-            className="flex-1 py-1 text-base text-slate-100 font-sans"
-            value={search}
-            onChangeText={setSearch}
-          />
-        </View>
+        <VaultSearchField value={search} onChangeText={setSearch} />
       </View>
 
       <ScrollView
@@ -125,7 +120,7 @@ export default function PasswordListScreen() {
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            tintColor="#818CF8"
+            tintColor={accent}
             onRefresh={async () => {
               setRefreshing(true);
               await hydrateFromDisk();
@@ -136,7 +131,7 @@ export default function PasswordListScreen() {
         {grouped.length === 0 ? (
           <Animated.View entering={FadeInDown.delay(120)} className="items-center mt-16 gap-y-6">
             <Text className="text-6xl opacity-70">📂</Text>
-            <Text className="text-slate-300 text-center px-12 font-display text-xl tracking-tight">
+            <Text className="text-slate-700 dark:text-slate-300 text-center px-12 font-display text-xl tracking-tight">
               Add your first password
             </Text>
             <Link href="/(tabs)/passwords/new" className="rounded-full bg-indigo-500 px-8 py-3 shadow-fab">
@@ -146,7 +141,7 @@ export default function PasswordListScreen() {
         ) : (
           grouped.map((section, si) => (
             <View key={section.title} className={si === 0 ? '' : 'mt-10'}>
-              <Text className="text-[11px] font-semibold text-slate-500 mb-4 tracking-[0.25em]">
+              <Text className="text-[11px] font-semibold text-slate-600 dark:text-slate-500 mb-4 tracking-[0.25em]">
                 {section.title} ({section.data.length})
               </Text>
               {section.data.map((item, ii) => (

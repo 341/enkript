@@ -22,8 +22,8 @@ export const StrengthMeter = memo(function StrengthMeterImpl({ password }: Props
 
   return (
     <View className="gap-y-2">
-      <Text className="font-sans text-xs text-slate-400">{`${label} • ${bits} bits entropy`}</Text>
-      <View className="h-2 rounded-md bg-white/10 overflow-hidden">
+      <Text className="font-sans text-xs text-slate-600 dark:text-slate-400">{`${label} • ${bits} bits entropy`}</Text>
+      <View className="h-2 rounded-md bg-slate-300 dark:bg-white/10 overflow-hidden">
         <View className={`h-full rounded-md ${barColors}`} style={{ width: `${pct}%` }} />
       </View>
     </View>
