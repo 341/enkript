@@ -3,7 +3,10 @@ import bcrypt from 'bcryptjs';
 import * as ExpoCrypto from 'expo-crypto';
 
 import { decryptPinEnvelope, encryptPinEnvelope } from '@/lib/crypto';
+import { hasVaultSessionKey } from '@/lib/vault-crypto-session';
 import { ensureKdfSalt } from '@/lib/vault-repository';
+import { createDataKeyIfNeeded, rewrapDataKey } from '@/lib/vault-key';
+import { deleteWrappedDataKey, readWrappedDataKey, writeWrappedDataKey } from '@/lib/vault-storage';
 import {
   isPinLength,
   isValidPinForLength,
@@ -27,9 +30,22 @@ export async function setPinCode(pin: string, length: PinLength): Promise<void> 
   }
   const hash = bcrypt.hashSync(pin, 12);
   await ensureKdfSalt();
-  const env = await encryptPinEnvelope(hash);
-  await writePinEnvelope(env);
+  if (hasVaultSessionKey()) {
+    const previousWrap = await readWrappedDataKey();
+    await rewrapDataKey(pin);
+    try {
+      await writePinEnvelope(await encryptPinEnvelope(hash));
+      await writeStoredPinLength(length);
+    } catch (error) {
+      if (previousWrap) await writeWrappedDataKey(previousWrap);
+      else await deleteWrappedDataKey();
+      throw error;
+    }
+    return;
+  }
+  await writePinEnvelope(await encryptPinEnvelope(hash));
   await writeStoredPinLength(length);
+  await createDataKeyIfNeeded(pin);
 }
 
 /** Configured PIN length (defaults to 6 for vaults created before length was stored). */

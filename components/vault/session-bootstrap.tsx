@@ -49,7 +49,11 @@ export function VaultColdBoot() {
       if (!hasPin) {
         // [VaultUnlock · Step 6] No PIN yet: stay unlocked and load vault for first-run / pre-wizard use.
         useVaultLockStore.setState({ vaultLocked: false });
-        await useVaultStore.getState().hydrateWithoutPin();
+        try {
+          await useVaultStore.getState().hydrateWithoutPin();
+        } catch {
+          // Ciphertext exists and there is no PIN yet. Leave it on disk.
+        }
       } else {
         // [VaultUnlock · Step 1] PIN exists: start locked until user completes Step 4 on /lock.
         useVaultLockStore.setState({ vaultLocked: true });

@@ -1,18 +1,18 @@
-// [VaultUnlock · Steps 1, 5, 6] SecureStore persistence for PIN envelope, vault bundle, lock timeout.
+// [VaultUnlock · Steps 1, 5, 6] PIN envelope and lock timeout stay in SecureStore.
+// The vault bundle lives in an app file; see vault-storage.ts.
 import * as SecureStore from 'expo-secure-store';
 
 import * as ExpoCrypto from 'expo-crypto';
 
 import { KDF_SALT_BYTES } from '@/lib/crypto-types';
-import { deriveVaultKey } from '@/lib/crypto';
+import { decryptStubValue, deriveVaultKey, isStubEnvelope } from '@/lib/crypto';
+import { VaultUnreadableError } from '@/lib/vault-errors';
 import {
   decryptVaultBundle,
   encryptVaultBundle,
 } from '@/lib/vault-migration';
+import { deleteLegacyVaultBundle, readVaultCiphertext, writeVaultCiphertext } from '@/lib/vault-storage';
 import type { VaultPersistShape } from '@/lib/types';
-
-/** [VaultUnlock · Step 6] Encrypted passwords/passkeys/devices JSON. */
-const VAULT_KEY = 'vault_encrypted_bundle_v1';
 export const KDF_SALT_KEY = 'vault_kdf_salt_v1';
 /** [VaultUnlock · Step 5] Encrypted bcrypt hash of the 6-digit PIN. */
 export const PIN_HASH_KEY = 'vault_pin_bcrypt_via_encrypt_stub_v1';
@@ -71,33 +71,42 @@ function normalizePersistShape(parsed: VaultPersistShape): VaultPersistShape {
 export async function loadPersistedVaultShape(
   vaultKey: Uint8Array,
 ): Promise<{ shape: VaultPersistShape; migrated: boolean }> {
+  const stored = await readVaultCiphertext();
+  if (!stored) return { shape: emptyPersist(), migrated: false };
+
+  let plaintext: string;
+  let migrated: boolean;
   try {
-    const raw = await SecureStore.getItemAsync(VAULT_KEY);
-    if (!raw) return { shape: emptyPersist(), migrated: false };
-    const { plaintext, migrated } = await decryptVaultBundle(raw, vaultKey);
-    const parsed = JSON.parse(plaintext) as VaultPersistShape;
-    const shape = normalizePersistShape(parsed);
-    if (migrated) {
-      await persistVaultShape(shape, vaultKey);
-    }
-    return { shape, migrated };
+    const result = await decryptVaultBundle(stored.raw, vaultKey);
+    plaintext = result.plaintext;
+    migrated = result.migrated || stored.legacy;
   } catch {
-    return { shape: emptyPersist(), migrated: false };
+    throw new VaultUnreadableError();
   }
+
+  let parsed: VaultPersistShape;
+  try {
+    parsed = JSON.parse(plaintext) as VaultPersistShape;
+  } catch {
+    throw new VaultUnreadableError('Vault data is damaged. Nothing was overwritten.');
+  }
+
+  const shape = normalizePersistShape(parsed);
+  if (migrated) {
+    await persistVaultShape(shape, vaultKey);
+  }
+  return { shape, migrated };
 }
 
-/** Load without vault key when no PIN is configured (stub-only legacy bundle). */
+/** Load a pre-PIN stub bundle. Real ciphertext without a key is left untouched. */
 export async function loadPersistedVaultShapeUnlocked(): Promise<VaultPersistShape> {
-  try {
-    const raw = await SecureStore.getItemAsync(VAULT_KEY);
-    if (!raw) return emptyPersist();
-    const { decryptStubValue, isStubEnvelope } = await import('@/lib/crypto');
-    if (!isStubEnvelope(raw)) return emptyPersist();
-    const json = await decryptStubValue(raw);
-    return normalizePersistShape(JSON.parse(json) as VaultPersistShape);
-  } catch {
-    return emptyPersist();
+  const stored = await readVaultCiphertext();
+  if (!stored) return emptyPersist();
+  if (!isStubEnvelope(stored.raw)) {
+    throw new VaultUnreadableError('Vault is locked.');
   }
+  const json = await decryptStubValue(stored.raw);
+  return normalizePersistShape(JSON.parse(json) as VaultPersistShape);
 }
 
 export async function persistVaultShape(
@@ -106,7 +115,8 @@ export async function persistVaultShape(
 ): Promise<void> {
   const json = JSON.stringify(shape);
   const enc = await encryptVaultBundle(json, vaultKey);
-  await SecureStore.setItemAsync(VAULT_KEY, enc);
+  await writeVaultCiphertext(enc);
+  await deleteLegacyVaultBundle();
 }
 
 /** [VaultUnlock · Steps 1, 5] Presence check (Step 1) and load for verify (Step 5). */

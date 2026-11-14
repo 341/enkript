@@ -1,12 +1,13 @@
 import { setVaultSessionKey, clearVaultSessionKey } from '@/lib/vault-crypto-session';
-import { deriveVaultKeyFromPin } from '@/lib/vault-repository';
+import { openDataKey } from '@/lib/vault-key';
 import { useVaultStore } from '@/stores/vault-store';
 
-/** Derive session key from PIN and hydrate vault (includes stub→v2 migration). */
+/** Unwrap the random data key and hydrate. Legacy PIN-derived vaults migrate once. */
 export async function unlockVaultWithPin(pin: string): Promise<{ migrated: boolean }> {
-  const vaultKey = await deriveVaultKeyFromPin(pin);
-  setVaultSessionKey(vaultKey);
-  return useVaultStore.getState().hydrateFromDisk(vaultKey);
+  const { dek, migrated: keyMigrated } = await openDataKey(pin);
+  setVaultSessionKey(dek);
+  const { migrated: dataMigrated } = await useVaultStore.getState().hydrateFromDisk(dek);
+  return { migrated: keyMigrated || dataMigrated };
 }
 
 export function lockVaultSession(): void {

@@ -12,8 +12,11 @@ Phased delivery per [FEATURE_RESEARCH_REPORT.md](./FEATURE_RESEARCH_REPORT.md).
 ## Crypto
 
 - PIN verify: bcrypt in stub envelope (`encryptPinEnvelope`)
-- Vault data: Argon2id → 32-byte key → XChaCha20-Poly1305 (`vault:v2:`)
-- Migration: automatic on unlock when `vaultstub:v1` detected
+- Key encryption key: Argon2id(PIN, per-vault salt)
+- Data key: random 32 bytes, wrapped by the key encryption key (`vault_dek_wrapped_v1` in SecureStore)
+- Vault data: XChaCha20-Poly1305 (`vault:v2:`) in `vault-bundle.v3.txt` (app documents). Legacy keychain blobs migrate once on unlock.
+- Failed decrypt throws `VaultUnreadableError` and does not replace the saved vault
+- Migration: automatic on unlock for `vaultstub:v1` and for vaults whose data key was Argon2id(PIN)
 
 ## Native autofill
 

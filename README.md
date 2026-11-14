@@ -20,9 +20,10 @@ See **[docs/FEATURES.md](docs/FEATURES.md)** for a full guide to screens, workfl
 | Layer | Technology |
 |-------|------------|
 | PIN verification | bcrypt |
-| Vault key derivation | Argon2id (per-vault salt) |
-| Data at rest | XChaCha20-Poly1305 (`vault:v2`) |
-| Session | Vault key in memory only while unlocked; cleared on lock |
+| Key wrapping | Argon2id(PIN, per-vault salt) wraps a random 256-bit data key |
+| Data at rest | XChaCha20-Poly1305 (`vault:v2`) in an app file. The wrapped key stays in the device keychain |
+| Session | Data key in memory only while unlocked; cleared on lock |
+| Read failure | Decrypt errors abort. The saved vault is not replaced |
 
 Biometrics gate **reveal** and optional passkey actions; **unlock always requires your PIN**.
 

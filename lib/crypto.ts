@@ -18,7 +18,7 @@ function decodeBase64Utf8(b64: string): string {
   return decodeURIComponent(escape(globalThis.atob(b64)));
 }
 
-function bytesToBase64(bytes: Uint8Array): string {
+export function bytesToBase64(bytes: Uint8Array): string {
   let bin = '';
   bytes.forEach((b) => {
     bin += String.fromCharCode(b);
@@ -26,7 +26,7 @@ function bytesToBase64(bytes: Uint8Array): string {
   return globalThis.btoa(bin);
 }
 
-function base64ToBytes(b64: string): Uint8Array {
+export function base64ToBytes(b64: string): Uint8Array {
   const bin = globalThis.atob(b64);
   const out = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);

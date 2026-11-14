@@ -148,13 +148,19 @@ function PinRotationPanel() {
       passkeys: useVaultStore.getState().passkeys,
       pairedDevices: useVaultStore.getState().pairedDevices,
     });
-    await setPinCode(next, newPinLength);
-    lockVaultSession();
-    await unlockVaultWithPin(next);
-    const { persistVaultShape } = await import('@/lib/vault-repository');
-    const { getVaultSessionKey } = await import('@/lib/vault-crypto-session');
-    await persistVaultShape(snapshot, getVaultSessionKey());
-    await useVaultStore.getState().hydrateFromDisk();
+    try {
+      await setPinCode(next, newPinLength);
+      lockVaultSession();
+      await unlockVaultWithPin(next);
+      const { persistVaultShape } = await import('@/lib/vault-repository');
+      const { getVaultSessionKey } = await import('@/lib/vault-crypto-session');
+      await persistVaultShape(snapshot, getVaultSessionKey());
+      await useVaultStore.getState().hydrateFromDisk();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Could not change PIN.';
+      setStatus(msg);
+      return;
+    }
     Alert.alert("PIN updated.");
     setCurrent("");
     setNext("");

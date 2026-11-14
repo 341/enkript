@@ -3,7 +3,7 @@ import * as Crypto from 'expo-crypto';
 import { create } from 'zustand';
 
 import { registerCredentials } from '@/lib/autofill-registry';
-import { clearVaultSessionKey, hasVaultSessionKey } from '@/lib/vault-crypto-session';
+import { clearVaultSessionKey, getVaultSessionKey, hasVaultSessionKey } from '@/lib/vault-crypto-session';
 import type {
   PairedBrowserDevice,
   PasswordEntry,
@@ -68,6 +68,9 @@ type VaultPersistActions = {
   revokeDevice: (id: string) => Promise<void>;
 };
 
+/** True only after a successful unlock hydrate. Blocks saves from overwriting a vault we failed to read. */
+let vaultWritable = false;
+
 function applyShapeToState(shape: VaultPersistShape) {
   return {
     passwords: passwordsFromShape(shape),
@@ -89,38 +92,39 @@ export const useVaultStore = create<VaultPersistActions>((set, get) => ({
   pairedDevices: [],
 
   hydrateFromDisk: async (vaultKey) => {
-    const { getVaultSessionKey } = await import('@/lib/vault-crypto-session');
     const effectiveKey = vaultKey ?? (hasVaultSessionKey() ? getVaultSessionKey() : null);
     if (!effectiveKey) {
       throw new Error('Vault key required');
     }
     const { shape, migrated } = await loadPersistedVaultShape(effectiveKey);
     const applied = applyShapeToState(shape);
+    vaultWritable = true;
     set({ ...applied, hydrated: true });
     await registerCredentials(get().passwords);
     return { migrated };
   },
 
   hydrateWithoutPin: async () => {
+    vaultWritable = false;
     const shape = await loadPersistedVaultShapeUnlocked();
     const applied = applyShapeToState(shape);
     set({ ...applied, hydrated: true });
   },
 
   persistNow: async () => {
-    const { getVaultSessionKey } = await import('@/lib/vault-crypto-session');
+    if (!vaultWritable) {
+      throw new Error('Vault is not open for writing. Nothing was overwritten.');
+    }
     const vaultKey = getVaultSessionKey();
-    await persistVaultShape(
-      shapeFromVaultState({
-        passwords: get().passwords,
-        notes: get().notes,
-        cards: get().cards,
-        folders: get().folders,
-        passkeys: get().passkeys,
-        pairedDevices: get().pairedDevices,
-      }),
-      vaultKey,
-    );
+    const shape = shapeFromVaultState({
+      passwords: get().passwords,
+      notes: get().notes,
+      cards: get().cards,
+      folders: get().folders,
+      passkeys: get().passkeys,
+      pairedDevices: get().pairedDevices,
+    });
+    await persistVaultShape(shape, vaultKey);
     await registerCredentials(get().passwords);
   },
 
@@ -129,6 +133,7 @@ export const useVaultStore = create<VaultPersistActions>((set, get) => ({
   },
 
   clearMemoryForLock: () => {
+    vaultWritable = false;
     clearVaultSessionKey();
     set({
       passwords: [],

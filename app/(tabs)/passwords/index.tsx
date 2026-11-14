@@ -125,7 +125,12 @@ export default function PasswordListScreen() {
               setRefreshing(true);
               const { hasVaultSessionKey } = await import('@/lib/vault-crypto-session');
               if (hasVaultSessionKey()) {
-                await hydrateFromDisk();
+                try {
+                  await hydrateFromDisk();
+                } catch (e) {
+                  const msg = e instanceof Error ? e.message : 'Could not reload the vault.';
+                  Alert.alert('Vault unchanged', msg);
+                }
               }
               setRefreshing(false);
             }}
