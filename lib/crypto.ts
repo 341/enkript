@@ -1,6 +1,6 @@
 import { xchacha20poly1305 } from '@noble/ciphers/chacha.js';
+import { argon2idAsync } from '@noble/hashes/argon2.js';
 import * as ExpoCrypto from 'expo-crypto';
-import { argon2id } from 'hash-wasm';
 
 import {
   AEAD_NONCE_BYTES,
@@ -79,14 +79,17 @@ export async function decryptStubValue(secret: string): Promise<string> {
   return decodeBase64Utf8(secret.slice(STUB_PREFIX.length + 1));
 }
 
-/** Argon2id via hash-wasm — chosen for Expo + Jest without native binaries. */
+/**
+ * Argon2id in JS. Hermes has no WebAssembly, so hash-wasm cannot run on device.
+ * Output matches hash-wasm for the same PIN, salt, and ARGON2_PARAMS.
+ */
 export async function deriveVaultKey(pin: string, salt: Uint8Array): Promise<Uint8Array> {
-  const hash = await argon2id({
-    password: pin,
-    salt,
-    ...ARGON2_PARAMS,
+  return argon2idAsync(pin, salt, {
+    t: ARGON2_PARAMS.iterations,
+    m: ARGON2_PARAMS.memorySize,
+    p: ARGON2_PARAMS.parallelism,
+    dkLen: ARGON2_PARAMS.hashLength,
   });
-  return hash instanceof Uint8Array ? hash : new Uint8Array(hash as ArrayBuffer);
 }
 
 export async function encryptWithVaultKey(plain: string, vaultKey: Uint8Array): Promise<string> {

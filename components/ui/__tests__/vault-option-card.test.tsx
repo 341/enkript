@@ -3,8 +3,8 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { VaultOptionCard } from '@/components/ui/vault-option-card';
 
 describe('VaultOptionCard', () => {
-  it('renders label and hint', () => {
-    render(
+  it('renders label and hint', async () => {
+    await render(
       <VaultOptionCard
         label="Dark"
         hint="Always dark."
@@ -16,15 +16,15 @@ describe('VaultOptionCard', () => {
     expect(screen.getByText('Always dark.')).toBeTruthy();
   });
 
-  it('exposes selected state to accessibility', () => {
-    render(<VaultOptionCard label="System" selected onPress={jest.fn()} />);
+  it('exposes selected state to accessibility', async () => {
+    await render(<VaultOptionCard label="System" selected onPress={jest.fn()} />);
     expect(screen.getByRole('radio', { checked: true })).toBeTruthy();
   });
 
-  it('invokes onPress', () => {
+  it('invokes onPress', async () => {
     const onPress = jest.fn();
-    render(<VaultOptionCard label="Light" selected={false} onPress={onPress} />);
-    fireEvent.press(screen.getByRole('radio'));
+    await render(<VaultOptionCard label="Light" selected={false} onPress={onPress} />);
+    await fireEvent.press(screen.getByRole('radio'));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 });

@@ -359,7 +359,7 @@ npm run android    # Native Android run
 npm run build      # EAS build (all platforms)
 ```
 
-- **Storybook** — `npm run storybook` (development only).
+- **Storybook** — `npm run storybook:start` (development only).
 - **Implementation tracker** — [IMPLEMENTATION.md](./IMPLEMENTATION.md).
 
 ---

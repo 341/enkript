@@ -23,7 +23,7 @@ function toRecords(entries: PasswordEntry[]): AutofillCredentialRecord[] {
 
 async function registerCredentialsNative(records: AutofillCredentialRecord[]): Promise<boolean> {
   try {
-    const { requireOptionalNativeModule } = await import('expo-modules-core');
+    const { requireOptionalNativeModule } = await import('expo');
     const mod = requireOptionalNativeModule<{ registerCredentials: (json: string) => Promise<void> }>(
       'VaultAutofill',
     );

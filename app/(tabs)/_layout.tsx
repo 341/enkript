@@ -1,7 +1,7 @@
 import { BlurView } from 'expo-blur';
 import { Tabs } from 'expo-router';
 import { Fingerprint, KeyRound, Settings, Shuffle } from 'lucide-react-native';
-import { Platform, View } from 'react-native';
+import { Platform, View, type ColorValue } from 'react-native';
 
 import { CenteredIcon } from '@/components/vault/centered-icon';
 import { useEffectiveColorScheme } from '@/hooks/useEffectiveColorScheme';
@@ -13,11 +13,12 @@ import {
 } from '@/lib/ui-theme';
 
 function tabIcon(Icon: typeof KeyRound) {
-  return function TabBarGlyph({ color, size }: { color: string; size: number }) {
+  return function TabBarGlyph({ color, size }: { color: ColorValue; size: number }) {
     const s = typeof size === 'number' ? size : 24;
+    const tint = typeof color === 'string' ? color : undefined;
     return (
       <CenteredIcon size={Math.ceil(s + 4)}>
-        <Icon color={color} size={s} strokeWidth={2.25} />
+        <Icon color={tint} size={s} strokeWidth={2.25} />
       </CenteredIcon>
     );
   };

@@ -9,8 +9,8 @@ describe('CategoryBadge', () => {
     ['finance', 'Finance'],
     ['shopping', 'Shopping'],
     ['other', 'Other'],
-  ] as const)('renders %s label', (category, label) => {
-    render(<CategoryBadge category={category} />);
+  ] as const)('renders %s label', async (category, label) => {
+    await render(<CategoryBadge category={category} />);
     expect(screen.getByText(label)).toBeTruthy();
   });
 });

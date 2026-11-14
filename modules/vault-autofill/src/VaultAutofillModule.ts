@@ -1,4 +1,4 @@
-import { NativeModule, requireNativeModule } from 'expo-modules-core';
+import { requireNativeModule } from 'expo';
 
 type VaultAutofillSpec = {
   registerCredentials(json: string): Promise<void>;
