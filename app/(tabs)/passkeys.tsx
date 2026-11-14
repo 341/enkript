@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
-import { Swipeable } from "react-native-gesture-handler";
+import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 
 import { PasskeyCard } from "@/components/vault/passkey-card";
 import { useVaultStore } from "@/stores/vault-store";

@@ -26,6 +26,7 @@ type Story = StoryObj<typeof meta>;
 const categories: PasswordCategory[] = ['social', 'work', 'finance', 'shopping', 'other'];
 
 export const All: Story = {
+  args: { category: 'social' },
   render: () => (
     <>
       {categories.map((c) => (

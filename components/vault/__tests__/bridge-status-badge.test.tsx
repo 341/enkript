@@ -7,8 +7,8 @@ describe('BridgeStatusBadge', () => {
     ['connected', 'Connected'],
     ['relay', 'Relay fallback'],
     ['offline', 'Offline'],
-  ] as const)('renders %s status', (status, label) => {
-    render(<BridgeStatusBadge status={status} />);
+  ] as const)('renders %s status', async (status, label) => {
+    await render(<BridgeStatusBadge status={status} />);
     expect(screen.getByText(label)).toBeTruthy();
   });
 });

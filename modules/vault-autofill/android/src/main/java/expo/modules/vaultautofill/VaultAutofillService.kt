@@ -57,13 +57,22 @@ class VaultAutofillService : AutofillService() {
   }
 
   private fun findAutofillId(structure: AssistStructure, vararg hints: String): AutofillId? {
-    for (i in 0 until structure.childCount) {
-      val node = structure.getChildAt(i)
-      val hint = node.hint?.lowercase() ?: ""
-      val idEntry = node.autofillId
-      if (idEntry != null && hints.any { hint.contains(it) }) {
-        return idEntry
-      }
+    for (i in 0 until structure.windowNodeCount) {
+      val found = findInNode(structure.getWindowNodeAt(i).rootViewNode, hints)
+      if (found != null) return found
+    }
+    return null
+  }
+
+  private fun findInNode(node: AssistStructure.ViewNode, hints: Array<out String>): AutofillId? {
+    val hint = node.hint?.lowercase() ?: ""
+    val idEntry = node.autofillId
+    if (idEntry != null && hints.any { hint.contains(it) }) {
+      return idEntry
+    }
+    for (i in 0 until node.childCount) {
+      val found = findInNode(node.getChildAt(i), hints)
+      if (found != null) return found
     }
     return null
   }

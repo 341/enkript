@@ -4,8 +4,8 @@ import { Text } from 'react-native';
 import { VaultPanel } from '@/components/ui/vault-panel';
 
 describe('VaultPanel', () => {
-  it('renders children and optional title', () => {
-    render(
+  it('renders children and optional title', async () => {
+    await render(
       <VaultPanel title="Where on iOS">
         <Text>Step one</Text>
       </VaultPanel>,

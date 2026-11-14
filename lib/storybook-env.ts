@@ -1,4 +1,4 @@
-/** True when running via `npm run storybook` (dedicated Storybook dev session). */
+/** True when running via `npm run storybook:start` (dedicated Storybook dev session). */
 export const isStorybookSession =
   process.env.EXPO_PUBLIC_STORYBOOK === 'true' ||
   process.env.STORYBOOK_ENABLED === 'true';
